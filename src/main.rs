@@ -16,6 +16,21 @@ use std::ffi::OsString;
 
 use anyhow::{anyhow, Result};
 
+macro_rules! die {
+    () => {
+        std::process::exit(1);
+    };
+
+    ( $code:expr $(,)? ) => {
+        std::process::exit($code);
+    };
+
+    ( $code:expr, $fmt:expr $( , $args:expr )* $(,)? ) => {{
+        eprintln!($fmt $( , $args )*);
+        std::process::exit($code);
+    }};
+}
+
 const DEFAULT_DIR: &str = "/var/service";
 
 enum ServiceState {
@@ -155,12 +170,14 @@ fn main() {
         None => OsString::from(DEFAULT_DIR),
     };
     let svdir = path::Path::new(&svdir);
-    env::set_current_dir(&svdir).expect("failed to cd to SVDIR");
+    if let Err(err) = env::set_current_dir(&svdir) {
+        die!(1, "failed to chdir to SVDIR {:?}: {}", svdir, err);
+    }
 
     // find all services
     let services = match get_services() {
         Ok(svcs) => svcs,
-        Err(err) => panic!("failed to get services: {:?}", err),
+        Err(err) => die!(1, "failed to list services: {}", err),
     };
 
     println!("  {:1} {:10} {:10} {:10} {:10}",
