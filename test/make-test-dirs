@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+basedir='./service'
+
+make-service() {
+	local name=$1
+	local state=$2
+	local pid=$3
+
+	dir=$basedir/$name
+
+	echo "creating $dir: (pid '$pid' state '$state')"
+
+	mkdir -p "$dir"
+	mkdir -p "$dir/supervise"
+	echo "$state" > "$dir/supervise/stat"
+	echo "$pid" > "$dir/supervise/pid"
+}
+
+make-service 'foo' 'run' 123
+make-service 'bar' 'run' 456
+make-service 'baz' 'run' 65537
