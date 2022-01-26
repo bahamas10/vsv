@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 
-basedir='./service'
+servicedir='./service'
+procdir='./proc'
+
+mkdir -p "$servicedir"
+mkdir -p "$procdir"
 
 make-service() {
 	local name=$1
 	local state=$2
 	local pid=$3
 
-	dir=$basedir/$name
+	local dir=$servicedir/$name
 
 	echo "creating $dir: (pid '$pid' state '$state')"
 
@@ -15,6 +19,11 @@ make-service() {
 	mkdir -p "$dir/supervise"
 	echo "$state" > "$dir/supervise/stat"
 	echo "$pid" > "$dir/supervise/pid"
+
+	local proc=$procdir/$pid
+	echo "creating $proc"
+	mkdir -p "$proc"
+	printf '%s-command\0arg1\0arg2\0' "$name" > "$proc/cmdline"
 }
 
 make-service 'foo' 'run' 123

@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.53"
+lazy_static = "1.4.0"
+libc = "0.2"
