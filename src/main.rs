@@ -15,6 +15,7 @@ use std::fs;
 use std::path;
 use std::time;
 use std::ffi::OsString;
+use std::process::Command;
 
 use anyhow::{anyhow, Result};
 use colored::*;
@@ -130,6 +131,20 @@ impl Service {
     }
 }
 
+fn pstree(pid: pid_t) -> Result<String> {
+    let output = Command::new("pstree")
+        .args(["-ac", &pid.to_string()])
+        .output()?;
+
+    if ! output.status.success() {
+        return Err(anyhow!("failed to run pstree"));
+    }
+
+    let stdout = String::from_utf8(output.stdout)?;
+
+    Ok(stdout)
+}
+
 fn cmd_from_pid(pid: pid_t) -> Result<String> {
     // /proc/<pid>/cmdline
     let p = PROC_PATH.join(pid.to_string()).join("cmdline");
@@ -212,6 +227,13 @@ fn process_service(service: &Service) -> Result<()> {
 
     println!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
         state.get_char(), name, state, enabled_s, pid_s, command, time_s);
+
+    if let Ok(pid) = pid {
+        match pstree(pid) {
+            Ok(stdout) => println!("\n{}\n", stdout.trim().dimmed()),
+            Err(err) => eprintln!("\npstree call failed: {}\n", err.to_string().red()),
+        }
+    }
 
     Ok(())
 }
