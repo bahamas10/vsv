@@ -16,11 +16,13 @@ use std::path;
 use std::time;
 use std::ffi::OsString;
 
-use lazy_static::lazy_static;
 use anyhow::{anyhow, Result};
+use colored::*;
+use lazy_static::lazy_static;
 
 const SERVICE_DIR: &str = "/var/service";
 const PROC_DIR: &str = "/proc";
+const COLORIZE: bool = true;
 
 lazy_static! {
     static ref PROC_PATH: path::PathBuf = {
@@ -57,25 +59,26 @@ enum ServiceState {
 impl fmt::Display for ServiceState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self {
-            ServiceState::Run => "run",
-            ServiceState::Down => "down",
-            ServiceState::Finish => "finish",
-            ServiceState::Unknown => "---",
+            ServiceState::Run => "run".green(),
+            ServiceState::Down => "down".red(),
+            ServiceState::Finish => "finish".red(),
+            ServiceState::Unknown => "n/a".yellow(),
         };
+
         s.fmt(f)
     }
 }
 
 impl ServiceState {
-    fn get_char(&self) -> &'static str {
+    fn get_char(&self) -> String {
         let s = match self {
-            ServiceState::Run => "✔",
-            ServiceState::Down => "X",
-            ServiceState::Finish => "X",
-            ServiceState::Unknown => "?",
+            ServiceState::Run => "✔".green(),
+            ServiceState::Down => "X".red(),
+            ServiceState::Finish => "X".red(),
+            ServiceState::Unknown => "?".yellow(),
         };
 
-        s
+        s.to_string()
     }
 }
 
@@ -91,10 +94,10 @@ impl Service {
         }
     }
 
-    pub fn wants_down(&self) -> bool {
+    pub fn enabled(&self) -> bool {
         let p = self.path.join("down");
 
-        p.exists()
+        ! p.exists()
     }
 
     pub fn get_pid(&self) -> Result<pid_t> {
@@ -176,7 +179,7 @@ fn process_service(service: &Service) -> Result<()> {
         None => return Err(anyhow!("failed to parse name from service")),
     };
 
-    let wants_down = service.wants_down();
+    let enabled = service.enabled();
     let pid = service.get_pid();
     let state = service.get_state();
     let time = service.get_start_time();
@@ -187,6 +190,7 @@ fn process_service(service: &Service) -> Result<()> {
             command = cmd;
         }
     }
+    let command = command.green();
 
     let mut time_s = String::from("---");
     if let Ok(t) = time {
@@ -194,18 +198,20 @@ fn process_service(service: &Service) -> Result<()> {
             time_s = relative_duration(t);
         }
     }
+    let time_s = time_s.dimmed();
 
-    let enabled = match wants_down {
-        true => "false",
-        false => "true"
+    let enabled_s = match enabled {
+        true => "true".green(),
+        false => "false".red(),
     };
+
     let pid_s = match pid {
         Ok(pid) => pid.to_string(),
         Err(_) => String::from("---")
-    };
+    }.magenta();
 
     println!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
-        state.get_char(), name, state, enabled, pid_s, command, time_s);
+        state.get_char(), name, state, enabled_s, pid_s, command, time_s);
 
     Ok(())
 }
@@ -233,6 +239,9 @@ fn get_services(path: &path::Path) -> Result<Vec<Service>> {
 }
 
 fn main() {
+    colored::control::set_override(COLORIZE);
+    colored::control::unset_override();
+
     let svdir = match env::var_os("SVDIR") {
         Some(dir) => dir,
         None => OsString::from(SERVICE_DIR),
@@ -247,7 +256,8 @@ fn main() {
 
     println!();
     println!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
-        "", "SERVICE", "STATE", "ENABLED", "PID", "COMMAND", "TIME");
+        "", "SERVICE".bold(), "STATE".bold(), "ENABLED".bold(),
+        "PID".bold(), "COMMAND".bold(), "TIME".bold());
 
     // process each service found
     for service in services {
