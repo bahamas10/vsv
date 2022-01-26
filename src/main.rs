@@ -67,7 +67,7 @@ impl fmt::Display for ServiceState {
 }
 
 impl ServiceState {
-    fn get_char(&self) -> String {
+    fn get_char(&self) -> &'static str {
         let s = match self {
             ServiceState::Run => "✔",
             ServiceState::Down => "X",
@@ -75,7 +75,7 @@ impl ServiceState {
             ServiceState::Unknown => "?",
         };
 
-        String::from(s)
+        s
     }
 }
 
@@ -141,6 +141,30 @@ fn cmd_from_pid(pid: pid_t) -> Result<String> {
     }
 }
 
+fn relative_duration(t: time::Duration) -> String {
+    let secs = t.as_secs();
+
+    let v = vec![
+        (secs / 60 / 60 / 24 / 365, "year"),
+        (secs / 60 / 60 / 24 / 30 , "month"),
+        (secs / 60 / 60 / 24 / 7  , "week"),
+        (secs / 60 / 60 / 24      , "day"),
+        (secs / 60 / 60           , "hour"),
+        (secs / 60                , "minute"),
+        (secs                     , "second"),
+    ];
+
+    for (num, name) in v {
+        if num > 1 {
+            return format!("{} {}s", num, name);
+        } else if num == 1 {
+            return format!("{} {}", num, name);
+        }
+    }
+
+    String::from("0 seconds")
+}
+
 fn process_service(service: &Service) -> Result<()> {
     // extract service name from path (basename)
     let name = match service.path.file_name() {
@@ -167,7 +191,7 @@ fn process_service(service: &Service) -> Result<()> {
     let mut time_s = String::from("---");
     if let Ok(t) = time {
         if let Ok(t) = t.elapsed() {
-            time_s = t.as_secs().to_string();
+            time_s = relative_duration(t);
         }
     }
 
