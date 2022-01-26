@@ -13,6 +13,7 @@ use std::env;
 use std::fmt;
 use std::fs;
 use std::path;
+use std::time;
 use std::ffi::OsString;
 
 use lazy_static::lazy_static;
@@ -91,27 +92,23 @@ impl Service {
     }
 
     pub fn wants_down(&self) -> bool {
-        let path = self.path.join("down");
+        let p = self.path.join("down");
 
-        path.exists()
+        p.exists()
     }
 
-    pub fn get_pid(&self) -> Option<pid_t> {
-        let path = self.path.join("supervise").join("pid");
+    pub fn get_pid(&self) -> Result<pid_t> {
+        let p = self.path.join("supervise").join("pid");
 
-        if let Ok(data) = fs::read_to_string(path) {
-            if let Ok(pid) = data.trim().parse::<pid_t>() {
-                return Some(pid);
-            }
-        }
+        let pid: pid_t = fs::read_to_string(p)?.trim().parse()?;
 
-        None
+        Ok(pid)
     }
 
     pub fn get_state(&self) -> ServiceState {
-        let path = self.path.join("supervise").join("stat");
+        let p = self.path.join("supervise").join("stat");
 
-        if let Ok(s) = fs::read_to_string(path) {
+        if let Ok(s) = fs::read_to_string(p) {
             return match s.trim() {
                 "run" => ServiceState::Run,
                 "down" => ServiceState::Down,
@@ -122,6 +119,12 @@ impl Service {
 
         ServiceState::Unknown
     }
+
+    pub fn get_start_time(&self) -> Result<time::SystemTime> {
+        let p = self.path.join("supervise").join("pid");
+
+        Ok(fs::metadata(p)?.modified()?)
+    }
 }
 
 fn cmd_from_pid(pid: pid_t) -> Result<String> {
@@ -130,7 +133,7 @@ fn cmd_from_pid(pid: pid_t) -> Result<String> {
 
     let data = fs::read_to_string(p)?;
 
-    let first = data.split("\0").next();
+    let first = data.split('\0').next();
 
     match first {
         Some(f) => Ok(f.to_string()),
@@ -152,12 +155,19 @@ fn process_service(service: &Service) -> Result<()> {
     let wants_down = service.wants_down();
     let pid = service.get_pid();
     let state = service.get_state();
-    let time = "time";
+    let time = service.get_start_time();
 
     let mut command = String::from("---");
-    if let Some(p) = pid {
+    if let Ok(p) = pid {
         if let Ok(cmd) = cmd_from_pid(p) {
             command = cmd;
+        }
+    }
+
+    let mut time_s = String::from("---");
+    if let Ok(t) = time {
+        if let Ok(t) = t.elapsed() {
+            time_s = t.as_secs().to_string();
         }
     }
 
@@ -166,12 +176,12 @@ fn process_service(service: &Service) -> Result<()> {
         false => "true"
     };
     let pid_s = match pid {
-        Some(pid) => pid.to_string(),
-        None => String::from("---")
+        Ok(pid) => pid.to_string(),
+        Err(_) => String::from("---")
     };
 
     println!("  {:1} {:10} {:10} {:10} {:10} {:10} {:10}",
-        state.get_char(), name, state, enabled, pid_s, command, time);
+        state.get_char(), name, state, enabled, pid_s, command, time_s);
 
     Ok(())
 }
@@ -182,13 +192,13 @@ fn get_services(path: &path::Path) -> Result<Vec<Service>> {
 
     for entry in fs::read_dir(path)? {
         let entry = entry?;
-        let path = entry.path();
+        let p = entry.path();
 
-        if ! path.is_dir() {
+        if ! p.is_dir() {
             continue;
         }
 
-        let service = Service::new(path);
+        let service = Service::new(p);
 
         dirs.push(service);
     }
@@ -206,7 +216,7 @@ fn main() {
     let svdir = path::Path::new(&svdir);
 
     // find all services
-    let services = match get_services(&svdir) {
+    let services = match get_services(svdir) {
         Ok(svcs) => svcs,
         Err(err) => die!(1, "failed to list services: {}", err),
     };
