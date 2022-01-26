@@ -180,7 +180,7 @@ fn process_service(service: &Service) -> Result<()> {
         Err(_) => String::from("---")
     };
 
-    println!("  {:1} {:10} {:10} {:10} {:10} {:10} {:10}",
+    println!("  {:1} {:10} {:10} {:10} {:10} {:15} {:10}",
         state.get_char(), name, state, enabled, pid_s, command, time_s);
 
     Ok(())
@@ -222,7 +222,7 @@ fn main() {
     };
 
     println!();
-    println!("  {:1} {:10} {:10} {:10} {:10} {:10} {:10}",
+    println!("  {:1} {:10} {:10} {:10} {:10} {:15} {:10}",
         "", "SERVICE", "STATE", "ENABLED", "PID", "COMMAND", "TIME");
 
     // process each service found
