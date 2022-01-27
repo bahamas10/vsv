@@ -111,11 +111,14 @@ fn relative_duration(t: time::Duration) -> String {
         (secs                     , "second"),
     ];
 
+    let mut plural = "";
     for (num, name) in v {
         if num > 1 {
-            return format!("{} {}s", num, name);
-        } else if num == 1 {
-            return format!("{} {}", num, name);
+            plural = "s"
+        }
+
+        if num > 0 {
+            return format!("{} {}{}", num, name, plural);
         }
     }
 
