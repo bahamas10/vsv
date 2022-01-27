@@ -21,10 +21,19 @@ use anyhow::{anyhow, Result};
 use colored::*;
 use lazy_static::lazy_static;
 
+mod die;
+use die::die;
+
+mod service;
+use service::{Service, ServiceState};
+
 const SERVICE_DIR: &str = "/var/service";
 const PROC_DIR: &str = "/proc";
-const COLORIZE: bool = true;
+const COLORIZE: bool = false;
 
+/*
+ * Make the proc dir var (overrideable via env vars) accessible everywhere after first access.
+ */
 lazy_static! {
     static ref PROC_PATH: path::PathBuf = {
         let procdir = match env::var_os("PROC_DIR") {
@@ -33,28 +42,6 @@ lazy_static! {
         };
         path::PathBuf::from(&procdir)
     };
-}
-
-macro_rules! die {
-    () => {
-        std::process::exit(1);
-    };
-
-    ( $code:expr $(,)? ) => {
-        std::process::exit($code);
-    };
-
-    ( $code:expr, $fmt:expr $( , $args:expr )* $(,)? ) => {{
-        eprintln!($fmt $( , $args )*);
-        std::process::exit($code);
-    }};
-}
-
-enum ServiceState {
-    Run,
-    Down,
-    Finish,
-    Unknown
 }
 
 impl fmt::Display for ServiceState {
@@ -71,7 +58,7 @@ impl fmt::Display for ServiceState {
 }
 
 impl ServiceState {
-    fn get_char(&self) -> String {
+    pub fn get_char(&self) -> String {
         let s = match self {
             ServiceState::Run => "✔".green(),
             ServiceState::Down => "X".red(),
@@ -80,54 +67,6 @@ impl ServiceState {
         };
 
         s.to_string()
-    }
-}
-
-#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
-struct Service {
-    path: path::PathBuf,
-}
-
-impl Service {
-    pub fn new(path: path::PathBuf) -> Self {
-        Self {
-            path
-        }
-    }
-
-    pub fn enabled(&self) -> bool {
-        let p = self.path.join("down");
-
-        ! p.exists()
-    }
-
-    pub fn get_pid(&self) -> Result<pid_t> {
-        let p = self.path.join("supervise").join("pid");
-
-        let pid: pid_t = fs::read_to_string(p)?.trim().parse()?;
-
-        Ok(pid)
-    }
-
-    pub fn get_state(&self) -> ServiceState {
-        let p = self.path.join("supervise").join("stat");
-
-        if let Ok(s) = fs::read_to_string(p) {
-            return match s.trim() {
-                "run" => ServiceState::Run,
-                "down" => ServiceState::Down,
-                "finish" => ServiceState::Finish,
-                _ => ServiceState::Unknown,
-            };
-        }
-
-        ServiceState::Unknown
-    }
-
-    pub fn get_start_time(&self) -> Result<time::SystemTime> {
-        let p = self.path.join("supervise").join("pid");
-
-        Ok(fs::metadata(p)?.modified()?)
     }
 }
 
