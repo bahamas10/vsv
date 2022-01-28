@@ -18,11 +18,11 @@ macro_rules! die {
         ::std::process::exit(1);
     };
 
-    ( $code:expr $(,)? ) => {
+    ($code:expr $(,)?) => {
         ::std::process::exit($code);
     };
 
-    ( $code:expr, $fmt:expr $( , $args:expr )* $(,)? ) => {{
+    ($code:expr, $fmt:expr $(, $args:expr )* $(,)?) => {{
         eprintln!($fmt $( , $args )*);
         ::std::process::exit($code);
     }};

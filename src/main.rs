@@ -17,7 +17,7 @@ use std::time;
 use std::ffi::OsString;
 use std::process::Command;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result, Context};
 use colored::*;
 use lazy_static::lazy_static;
 
@@ -30,6 +30,19 @@ use service::{Service, ServiceState};
 const SERVICE_DIR: &str = "/var/service";
 const PROC_DIR: &str = "/proc";
 const COLORIZE: bool = false;
+
+static IS_VERBOSE: bool = true;
+static PSTREE: bool = false;
+
+macro_rules! verbose {
+    ($fmt:expr $(, $args:expr )* $(,)? ) => {
+        if IS_VERBOSE {
+            let s = format!($fmt $(, $args)*);
+            eprintln!("{}  {}", ">", s.dimmed());
+        }
+    };
+}
+
 
 /*
  * Make the proc dir var (overrideable via env vars) accessible everywhere after first access.
@@ -76,7 +89,7 @@ fn pstree(pid: pid_t) -> Result<String> {
         .output()?;
 
     if ! output.status.success() {
-        return Err(anyhow!("failed to run pstree"));
+        return Err(anyhow!("pstree return non-zero"));
     }
 
     let stdout = String::from_utf8(output.stdout)?;
@@ -88,13 +101,14 @@ fn cmd_from_pid(pid: pid_t) -> Result<String> {
     // /proc/<pid>/cmdline
     let p = PROC_PATH.join(pid.to_string()).join("cmdline");
 
-    let data = fs::read_to_string(p)?;
+    let data = fs::read_to_string(&p)
+        .with_context(|| format!("failed to read pid file: {:?}", p))?;
 
     let first = data.split('\0').next();
 
     match first {
         Some(f) => Ok(f.to_string()),
-        None => Err(anyhow!("failed to split cmdline")),
+        None => Err(anyhow!("failed to split cmdline data: {:?}", first)),
     }
 }
 
@@ -126,6 +140,8 @@ fn relative_duration(t: time::Duration) -> String {
 }
 
 fn process_service(service: &Service) -> Result<()> {
+    verbose!("processing {:?}", service);
+
     // extract service name from path (basename)
     let name = match service.path.file_name() {
         Some(name) => name,
@@ -143,9 +159,14 @@ fn process_service(service: &Service) -> Result<()> {
 
     let mut command = String::from("---");
     if let Ok(p) = pid {
-        if let Ok(cmd) = cmd_from_pid(p) {
-            command = cmd;
-        }
+        match cmd_from_pid(p) {
+            Ok(cmd) => {
+                command = cmd;
+            }
+            Err(err) => {
+                verbose!("failed to get command for pid {}: {:?}", p, err);
+            }
+        };
     }
     let command = command.green();
 
@@ -164,16 +185,27 @@ fn process_service(service: &Service) -> Result<()> {
 
     let pid_s = match pid {
         Ok(pid) => pid.to_string(),
-        Err(_) => String::from("---")
+        Err(ref err) => {
+            verbose!("failed to get pid: {}", err);
+            String::from("---")
+        }
     }.magenta();
 
     println!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
-        state.get_char(), name, state, enabled_s, pid_s, command, time_s);
+        state.get_char(),
+        name,
+        state,
+        enabled_s,
+        pid_s,
+        command,
+        time_s);
 
-    if let Ok(pid) = pid {
-        match pstree(pid) {
-            Ok(stdout) => println!("\n{}\n", stdout.trim().dimmed()),
-            Err(err) => eprintln!("\npstree call failed: {}\n", err.to_string().red()),
+    if PSTREE {
+        if let Ok(pid) = pid {
+            match pstree(pid) {
+                Ok(stdout) => println!("\n{}\n", stdout.trim().dimmed()),
+                Err(err) => eprintln!("\npstree call failed: {}\n", err.to_string().red()),
+            }
         }
     }
 
@@ -219,9 +251,15 @@ fn main() {
     };
 
     println!();
+    verbose!("found {} services in {:?}", services.len(), svdir);
     println!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
-        "", "SERVICE".bold(), "STATE".bold(), "ENABLED".bold(),
-        "PID".bold(), "COMMAND".bold(), "TIME".bold());
+        "",
+        "SERVICE".bold(),
+        "STATE".bold(),
+        "ENABLED".bold(),
+        "PID".bold(),
+        "COMMAND".bold(),
+        "TIME".bold());
 
     // process each service found
     for service in services {
