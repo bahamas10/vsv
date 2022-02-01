@@ -32,7 +32,7 @@ const PROC_DIR: &str = "/proc";
 const COLORIZE: bool = false;
 
 static IS_VERBOSE: bool = true;
-static PSTREE: bool = false;
+static PSTREE: bool = true;
 
 macro_rules! verbose {
     ($fmt:expr $(, $args:expr )* $(,)? ) => {
@@ -42,7 +42,6 @@ macro_rules! verbose {
         }
     };
 }
-
 
 /*
  * Make the proc dir var (overrideable via env vars) accessible everywhere after first access.
@@ -83,7 +82,17 @@ impl ServiceState {
     }
 }
 
-fn pstree(pid: pid_t) -> Result<String> {
+struct ServiceObject {
+    pub name: String,
+    pub state: ServiceState,
+    pub enabled: bool,
+    pub command: Option<String>,
+    pub pid: Option<pid_t>,
+    pub start_time: Option<time::SystemTime>,
+    pub pstree: Option<Result<String>>,
+}
+
+fn get_pstree(pid: pid_t) -> Result<String> {
     let output = Command::new("pstree")
         .args(["-ac", &pid.to_string()])
         .output()?;
@@ -139,77 +148,108 @@ fn relative_duration(t: time::Duration) -> String {
     String::from("0 seconds")
 }
 
-fn process_service(service: &Service) -> Result<()> {
+fn process_service(service: &Service, want_pstree: bool) -> Result<ServiceObject> {
     verbose!("processing {:?}", service);
 
     // extract service name from path (basename)
     let name = match service.path.file_name() {
         Some(name) => name,
-        None => return Err(anyhow!("failed to get name from service")),
+        None => return Err(anyhow!("{:?}: failed to get name from service", service.path)),
     };
     let name = match name.to_str() {
         Some(name) => name,
-        None => return Err(anyhow!("failed to parse name from service")),
+        None => return Err(anyhow!("{:?}: failed to parse name from service", service.path)),
     };
+    let name = name.to_string();
 
     let enabled = service.enabled();
     let pid = service.get_pid();
     let state = service.get_state();
-    let time = service.get_start_time();
+    let start_time = service.get_start_time().ok();
 
-    let mut command = String::from("---");
+    let mut command = None;
     if let Ok(p) = pid {
         match cmd_from_pid(p) {
             Ok(cmd) => {
-                command = cmd;
+                command = Some(cmd);
             }
             Err(err) => {
-                verbose!("failed to get command for pid {}: {:?}", p, err);
+                verbose!("{:?}: failed to get command for pid {}: {:?}", service.path, p, err);
             }
         };
     }
-    let command = command.green();
 
-    let mut time_s = String::from("---");
-    if let Ok(t) = time {
-        if let Ok(t) = t.elapsed() {
-            time_s = relative_duration(t);
+    let pid = match pid {
+        Ok(pid) => Some(pid),
+        Err(ref err) => {
+            verbose!("{:?}: failed to get pid: {}", service.path, err);
+            None
+        }
+    };
+
+    let mut pstree = None;
+    if want_pstree {
+        if let Some(pid) = pid {
+            pstree = Some(get_pstree(pid));
         }
     }
-    let time_s = time_s.dimmed();
 
-    let enabled_s = match enabled {
+    let object = ServiceObject {
+        name,
+        state,
+        enabled,
+        command,
+        pid,
+        start_time,
+        pstree
+    };
+
+    Ok(object)
+}
+
+fn print_service(object: &ServiceObject) {
+    let command = match &object.command {
+        Some(cmd) => cmd,
+        None => "---",
+    };
+    let command = command.green();
+
+    let time = match object.start_time {
+        Some(time) => {
+            match time.elapsed() {
+                Ok(t) => relative_duration(t),
+                Err(err) => err.to_string(),
+            }
+        },
+        None => String::from("---"),
+    };
+    let time = time.dimmed();
+
+    let enabled = match object.enabled {
         true => "true".green(),
         false => "false".red(),
     };
 
-    let pid_s = match pid {
-        Ok(pid) => pid.to_string(),
-        Err(ref err) => {
-            verbose!("failed to get pid: {}", err);
-            String::from("---")
-        }
+    let pid = match object.pid {
+        Some(pid) => pid.to_string(),
+        None => String::from("---"),
     }.magenta();
 
     println!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
-        state.get_char(),
-        name,
-        state,
-        enabled_s,
-        pid_s,
+        object.state.get_char(),
+        object.name,
+        object.state,
+        enabled,
+        pid,
         command,
-        time_s);
+        time);
 
-    if PSTREE {
-        if let Ok(pid) = pid {
-            match pstree(pid) {
-                Ok(stdout) => println!("\n{}\n", stdout.trim().dimmed()),
-                Err(err) => eprintln!("\npstree call failed: {}\n", err.to_string().red()),
-            }
+    if object.pstree.is_some() {
+        match object.pstree.as_ref().unwrap() {
+            Ok(stdout) => println!("\n{}\n", stdout.trim().dimmed()),
+            Err(err) => eprintln!("\npstree call failed: {}\n", err.to_string().red()),
         }
     }
-
-    Ok(())
 }
 
 fn get_services(path: &path::Path) -> Result<Vec<Service>> {
@@ -250,8 +290,18 @@ fn main() {
         Err(err) => die!(1, "failed to list services: {}", err),
     };
 
+    // process each service found (just gather data here)
+    let mut objects = vec![];
+    for service in services {
+        match process_service(&service, PSTREE) {
+            Ok(svc) => objects.push(svc),
+            Err(err) => eprintln!("failed to process service {:?}: {}", service, err),
+        }
+    }
+
+    // print gathared data
     println!();
-    verbose!("found {} services in {:?}", services.len(), svdir);
+    verbose!("found {} services in {:?}", objects.len(), svdir);
     println!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
         "",
         "SERVICE".bold(),
@@ -261,9 +311,9 @@ fn main() {
         "COMMAND".bold(),
         "TIME".bold());
 
-    // process each service found
-    for service in services {
-        let _ = process_service(&service);
+    // print each service found
+    for object in objects {
+        print_service(&object);
     }
 
     println!();
