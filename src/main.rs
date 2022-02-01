@@ -20,6 +20,7 @@ use std::process::Command;
 use anyhow::{anyhow, Result, Context};
 use colored::*;
 use lazy_static::lazy_static;
+use rayon::prelude::*;
 
 mod die;
 use die::die;
@@ -291,7 +292,7 @@ fn main() {
     };
 
     // process each service found (just gather data here)
-    let objects: Vec<ServiceObject> = services.iter()
+    let objects: Vec<ServiceObject> = services.par_iter()
         .filter_map(|service| {
             match process_service(&service, PSTREE) {
                 Ok(svc) => Some(svc),
