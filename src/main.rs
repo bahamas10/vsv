@@ -291,13 +291,16 @@ fn main() {
     };
 
     // process each service found (just gather data here)
-    let mut objects = vec![];
-    for service in services {
-        match process_service(&service, PSTREE) {
-            Ok(svc) => objects.push(svc),
-            Err(err) => eprintln!("failed to process service {:?}: {}", service, err),
-        }
-    }
+    let objects: Vec<ServiceObject> = services.iter()
+        .filter_map(|service| {
+            match process_service(&service, PSTREE) {
+                Ok(svc) => Some(svc),
+                Err(err) => {
+                    eprintln!("failed to process service {:?}: {}", service, err);
+                    None
+                }
+            }
+        }).collect();
 
     // print gathared data
     println!();
