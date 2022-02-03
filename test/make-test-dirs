@@ -29,3 +29,4 @@ make-service() {
 make-service 'foo' 'run' 123
 make-service 'bar' 'run' 456
 make-service 'baz' 'run' 65537
+make-service 'long-service-name' 'run' 47

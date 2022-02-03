@@ -123,11 +123,13 @@ impl Service {
 
 impl fmt::Display for Service {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let name = trim_long_string(&self.name, 15);
+
         let command = match &self.command {
             Some(cmd) => cmd,
             None => "---",
         };
-        let command = command.green();
+        let command = trim_long_string(command, 15).green();
 
         let time = match self.start_time {
             Some(time) => {
@@ -153,7 +155,7 @@ impl fmt::Display for Service {
         let state_color = self.state.get_color();
         let mut base = format!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
             self.state.get_char().color(state_color),
-            self.name,
+            name,
             self.state.to_string().color(state_color),
             enabled,
             pid,
@@ -174,4 +176,17 @@ impl fmt::Display for Service {
 
 fn get_pstree(pid: pid_t) -> Result<String> {
     utils::run_program(&["pstree", "-ac", &pid.to_string()])
+}
+
+fn trim_long_string(s: &str, num: usize) -> String {
+    assert!(num > 3, "number too small");
+    let num = num - 3;
+
+    let len = s.len();
+    if len > num {
+        let t = s.chars().take(num).collect::<String>();
+        format!("{}...", t)
+    } else {
+        s.to_string()
+    }
 }
