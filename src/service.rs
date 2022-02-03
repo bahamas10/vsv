@@ -65,9 +65,9 @@ impl Service {
     pub fn from_runit_service(service: &RunitService, want_pstree: bool) -> Result<Self> {
         let name = service.path
             .file_name()
-            .ok_or_else(|| { anyhow!("{:?}: failed to get name from service", service.path) })?
+            .ok_or_else(|| anyhow!("{:?}: failed to get name from service", service.path))?
             .to_str()
-            .ok_or_else(|| { anyhow!("{:?}: failed to parse name from service", service.path) })?
+            .ok_or_else(|| anyhow!("{:?}: failed to parse name from service", service.path))?
             .to_string();
 
         let enabled = service.enabled();
@@ -123,13 +123,18 @@ impl Service {
 
 impl fmt::Display for Service {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let name = trim_long_string(&self.name, 15, "...");
+        let state_color = self.state.get_color();
+
+        let status_char = self.state.get_char().color(state_color);
+        let state = self.state.to_string().color(state_color);
+
+        let name = utils::trim_long_string(&self.name, 20, "...");
 
         let command = match &self.command {
             Some(cmd) => cmd,
             None => "---",
         };
-        let command = trim_long_string(command, 15, "...").green();
+        let command = utils::trim_long_string(command, 17, "...").green();
 
         let time = match self.start_time {
             Some(time) => {
@@ -139,8 +144,7 @@ impl fmt::Display for Service {
                 }
             },
             None => String::from("---"),
-        };
-        let time = time.dimmed();
+        }.dimmed();
 
         let enabled = match self.enabled {
             true => "true".green(),
@@ -152,11 +156,10 @@ impl fmt::Display for Service {
             None => String::from("---"),
         }.magenta();
 
-        let state_color = self.state.get_color();
-        let mut base = format!("  {:1} {:15} {:10} {:10} {:10} {:15} {:10}",
-            self.state.get_char().color(state_color),
+        let mut base = format!("  {:1} {:20} {:7} {:9} {:8} {:17} {}",
+            status_char,
             name,
-            self.state.to_string().color(state_color),
+            state,
             enabled,
             pid,
             command,
@@ -176,18 +179,4 @@ impl fmt::Display for Service {
 
 fn get_pstree(pid: pid_t) -> Result<String> {
     utils::run_program(&["pstree", "-ac", &pid.to_string()])
-}
-
-fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
-    let suffix_len = suffix.len();
-
-    assert!(limit > suffix_len, "number too small");
-
-    let len = s.len();
-    if len > limit {
-        let t = s.chars().take(limit - suffix_len).collect::<String>();
-        format!("{}{}", t, suffix)
-    } else {
-        s.to_string()
-    }
 }

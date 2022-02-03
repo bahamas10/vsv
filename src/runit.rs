@@ -49,16 +49,14 @@ impl RunitService {
     pub fn get_state(&self) -> RunitServiceState {
         let p = self.path.join("supervise").join("stat");
 
-        if let Ok(s) = fs::read_to_string(p) {
-            return match s.trim() {
-                "run" => RunitServiceState::Run,
-                "down" => RunitServiceState::Down,
-                "finish" => RunitServiceState::Finish,
-                _ => RunitServiceState::Unknown,
-            };
-        }
+        let s = fs::read_to_string(p).unwrap_or_else(|_| String::from("unknown"));
 
-        RunitServiceState::Unknown
+        match s.trim() {
+            "run" => RunitServiceState::Run,
+            "down" => RunitServiceState::Down,
+            "finish" => RunitServiceState::Finish,
+            _ => RunitServiceState::Unknown,
+        }
     }
 
     pub fn get_start_time(&self) -> Result<time::SystemTime> {

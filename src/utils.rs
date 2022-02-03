@@ -84,3 +84,17 @@ pub fn relative_duration(t: time::Duration) -> String {
 
     String::from("0 seconds")
 }
+
+pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
+    let suffix_len = suffix.len();
+
+    assert!(limit > suffix_len, "number too small");
+
+    let len = s.len();
+    if len > limit {
+        let t = s.chars().take(limit - suffix_len).collect::<String>();
+        format!("{}{}", t, suffix)
+    } else {
+        s.to_string()
+    }
+}
