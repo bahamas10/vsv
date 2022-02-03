@@ -179,13 +179,15 @@ fn get_pstree(pid: pid_t) -> Result<String> {
 }
 
 fn trim_long_string(s: &str, num: usize) -> String {
-    assert!(num > 3, "number too small");
-    let num = num - 3;
+    let suffix = "...";
+    let suffix_len = suffix.len();
+
+    assert!(num > suffix_len, "number too small");
 
     let len = s.len();
     if len > num {
-        let t = s.chars().take(num).collect::<String>();
-        format!("{}...", t)
+        let t = s.chars().take(num - suffix_len).collect::<String>();
+        format!("{}{}", t, suffix)
     } else {
         s.to_string()
     }
