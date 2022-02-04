@@ -1,4 +1,4 @@
-use libc::pid_t;
+use libc::{pid_t, c_int};
 use std::env;
 use std::fs;
 use std::path;
@@ -145,4 +145,8 @@ pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
     format!("{}{}",
         s.chars().take(limit - suffix_len).collect::<String>(),
         suffix)
+}
+
+pub fn isatty(fd: c_int) -> bool {
+    unsafe { libc::isatty(fd) != 0 }
 }

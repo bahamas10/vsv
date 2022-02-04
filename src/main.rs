@@ -66,7 +66,7 @@ fn do_status() -> Result<()> {
     // print gathared data
     let normal_style = Style::default();
     let bold_style = Style::default().bold();
-    println!("test {}", bold_style.paint("hello"));
+
     println!();
     println!("found {} services in {:?}", services.len(), svdir); // verbose
     println!("{}", utils::format_status_line(
@@ -90,9 +90,22 @@ fn do_status() -> Result<()> {
 }
 
 fn main() {
-    let want_color = env::var_os("NO_COLOR").is_none();
+    let isatty = utils::isatty(1);
+    let no_color_env = env::var_os("NO_COLOR").is_some();
+    let want_color = None;
 
-    if want_color {
+    let colorize = if let Some(want_color) = want_color {
+        // -c takes precedence
+        want_color
+    } else if no_color_env {
+        // env variable is next line
+        false
+    } else {
+        // finally, set color to be dependent on stdout being a TTY
+        isatty
+    };
+
+    if colorize {
         Paint::enable();
     } else {
         Paint::disable();
