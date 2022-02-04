@@ -64,13 +64,12 @@ fn do_status() -> Result<()> {
         .collect();
 
     // print gathared data
-    let normal_style = Style::default();
     let bold_style = Style::default().bold();
 
     println!();
     println!("found {} services in {:?}", services.len(), svdir); // verbose
     println!("{}", utils::format_status_line(
-        normal_style.paint(""),
+        bold_style.paint(""),
         bold_style.paint("SERVICE"),
         bold_style.paint("STATE"),
         bold_style.paint("ENABLED"),
