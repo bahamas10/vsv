@@ -12,8 +12,8 @@ use std::env;
 use std::path;
 use std::ffi::OsString;
 
+use yansi::{Color, Style, Paint};
 use anyhow::{Context, Result};
-use colored::*;
 use rayon::prelude::*;
 
 mod die;
@@ -25,7 +25,6 @@ use die::die;
 use service::Service;
 
 const SERVICE_DIR: &str = "/var/service";
-const COLORIZE: bool = false;
 
 /*
 macro_rules! verbose {
@@ -65,16 +64,20 @@ fn do_status() -> Result<()> {
         .collect();
 
     // print gathared data
+    let normal_style = Style::default();
+    let bold_style = Style::default().bold();
+    println!("test {}", bold_style.paint("hello"));
     println!();
     println!("found {} services in {:?}", services.len(), svdir); // verbose
-    println!("  {:1} {:20} {:7} {:9} {:8} {:17} {}",
-        "",
-        "SERVICE".bold(),
-        "STATE".bold(),
-        "ENABLED".bold(),
-        "PID".bold(),
-        "COMMAND".bold(),
-        "TIME".bold());
+    println!("{}", utils::format_status_line(
+        normal_style.paint(""),
+        bold_style.paint("SERVICE"),
+        bold_style.paint("STATE"),
+        bold_style.paint("ENABLED"),
+        bold_style.paint("PID"),
+        bold_style.paint("COMMAND"),
+        bold_style.paint("TIME"),
+    ));
 
     // print each service found
     for service in services {
@@ -87,14 +90,20 @@ fn do_status() -> Result<()> {
 }
 
 fn main() {
-    // color output
-    colored::control::set_override(COLORIZE);
-    colored::control::unset_override();
+    let want_color = env::var_os("NO_COLOR").is_none();
+
+    if want_color {
+        Paint::enable();
+    } else {
+        Paint::disable();
+    }
 
     // figure out subcommand to run
     let ret = do_status();
 
     if let Err(err) = ret {
-        die!(1, "{}: {:?}", "error".red(), err);
+        die!(1, "{}: {:?}",
+            Color::Red.paint("error"),
+            err);
     }
 }

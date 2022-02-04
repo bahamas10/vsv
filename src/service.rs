@@ -3,7 +3,7 @@ use std::fmt;
 use std::time;
 
 use anyhow::{anyhow, Result};
-use colored::*;
+use yansi::{Style, Color};
 
 use crate::runit::{RunitService, RunitServiceState};
 
@@ -17,13 +17,17 @@ pub enum ServiceState {
 }
 
 impl ServiceState {
-    pub fn get_color(&self) -> Color {
-        match self {
+    pub fn get_style(&self) -> Style {
+        let style = Style::default();
+
+        let color = match self {
             ServiceState::Run => Color::Green,
             ServiceState::Down => Color::Red,
             ServiceState::Finish => Color::Yellow,
             ServiceState::Unknown => Color::Yellow,
-        }
+        };
+
+        style.fg(color)
     }
 
     pub fn get_char(&self) -> String {
@@ -123,18 +127,21 @@ impl Service {
 
 impl fmt::Display for Service {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let state_color = self.state.get_color();
+        let state_style = self.state.get_style();
 
-        let status_char = self.state.get_char().color(state_color);
-        let state = self.state.to_string().color(state_color);
+        let status_char = self.state.get_char();
+        let status_char = state_style.paint(status_char.as_str());
 
-        let name = utils::trim_long_string(&self.name, 20, "...");
+        let state = self.state.to_string();
+        let state = state_style.paint(state.as_str());
+
+        let name = Style::default().paint(self.name.as_str());
 
         let command = match &self.command {
             Some(cmd) => cmd,
             None => "---",
         };
-        let command = utils::trim_long_string(command, 17, "...").green();
+        let command = Color::Green.paint(command);
 
         let time = match self.start_time {
             Some(time) => {
@@ -144,19 +151,22 @@ impl fmt::Display for Service {
                 }
             },
             None => String::from("---"),
-        }.dimmed();
+        };
+        let time = Style::default().dimmed().paint(time.as_str());
 
         let enabled = match self.enabled {
-            true => "true".green(),
-            false => "false".red(),
+            true => Color::Green.paint("true"),
+            false => Color::Red.paint("false"),
         };
 
         let pid = match self.pid {
             Some(pid) => pid.to_string(),
             None => String::from("---"),
-        }.magenta();
+        };
 
-        let mut base = format!("  {:1} {:20} {:7} {:9} {:8} {:17} {}",
+        let pid = Color::Magenta.paint(pid.as_str());
+
+        let mut base = utils::format_status_line(
             status_char,
             name,
             state,
@@ -167,8 +177,8 @@ impl fmt::Display for Service {
 
         if let Some(tree) = &self.pstree {
             let tree_s = match tree {
-                Ok(stdout) => format!("{}", stdout.trim().dimmed()),
-                Err(err) => format!("pstree call failed: {}", err.to_string().red()),
+                Ok(stdout) => Style::default().dimmed().paint(stdout.trim().to_string()),
+                Err(err) => Color::Red.paint(format!("pstree call failed: {}", err)),
             };
             base = format!("{}\n\n{}\n", base, tree_s);
         }
