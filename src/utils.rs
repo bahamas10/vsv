@@ -34,30 +34,28 @@ pub fn format_status_line<T: AsRef<str>>(
     command: (T, &Style),
     time: (T, &Style)) -> String {
 
-    let status_char_len = 1;
-    let name_len = 20;
-    let state_len = 7;
-    let enabled_len = 9;
-    let pid_len = 8;
-    let command_len = 17;
-    let time_len = 100;
+    // ( data + style to print, max width, suffix )
+    let data = [
+        (status_char, 1,  ""   ),
+        (name,        20, "..."),
+        (state,       7,  "..."),
+        (enabled,     9,  "..."),
+        (pid,         8,  "..."),
+        (command,     17, "..."),
+        (time,        99, "..."),
+    ];
 
-    let status_char_s = trim_long_string(status_char.0.as_ref(), status_char_len, "");
-    let name_s = trim_long_string(name.0.as_ref(), name_len, "...");
-    let state_s = trim_long_string(state.0.as_ref(), state_len, "...");
-    let enabled_s = trim_long_string(enabled.0.as_ref(), enabled_len, "...");
-    let pid_s = trim_long_string(pid.0.as_ref(), pid_len, "...");
-    let command_s = trim_long_string(pid.0.as_ref(), command_len, "...");
-    let time_s = trim_long_string(time.0.as_ref(), time_len, "...");
+    let mut line = String::from(" ");
 
-    format!("  {0:1$} {2:3$} {4:5$} {6:7$} {8:9$} {10:11$} {12}",
-        status_char.1.paint(status_char_s), status_char_len,
-        name.1.paint(name_s), name_len,
-        state.1.paint(state_s), state_len,
-        enabled.1.paint(enabled_s), enabled_len,
-        pid.1.paint(pid_s), pid_len,
-        command.1.paint(command_s), command_len,
-        time.1.paint(time_s))
+    for (o, max, suffix) in data {
+        let (text, style) = o;
+
+        let text = trim_long_string(text.as_ref(), max, suffix);
+
+        line = format!("{0} {1:2$}", line, style.paint(text), max);
+    }
+
+    line
 }
 
 pub fn cmd_from_pid(pid: pid_t) -> Result<String> {
