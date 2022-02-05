@@ -26,25 +26,15 @@ use service::Service;
 
 const SERVICE_DIR: &str = "/var/service";
 
-/*
-macro_rules! verbose {
-    ($fmt:expr $(, $args:expr )* $(,)? ) => {
-        if want_verbose {
-            let s = format!($fmt $(, $args)*);
-            eprintln!("{}  {}", ">", s.dimmed());
-        }
-    };
-}
-*/
-
 fn do_status() -> Result<()> {
     // get SVDIR from env or use default
     let svdir = env::var_os("SVDIR")
         .unwrap_or_else(|| OsString::from(SERVICE_DIR) );
     let svdir = path::Path::new(&svdir);
 
-    // check if user wants pstree
+    // check env
     let want_pstree = env::var_os("PSTREE").is_some();
+    let want_verbose = env::var_os("VERBOSE").is_some();
 
     // find all services
     let services = runit::get_services(svdir)
@@ -68,7 +58,10 @@ fn do_status() -> Result<()> {
     let bold_style = Style::default().bold();
 
     println!();
-    println!("found {} services in {:?}", services.len(), svdir); // verbose
+    if want_verbose {
+        println!(">  {}", Style::default().dimmed().paint(
+                format!("found {} services in {:?}", services.len(), svdir)));
+    }
     println!("{}", utils::format_status_line(
         ("", &bold_style),
         ("SERVICE", &bold_style),
@@ -82,6 +75,11 @@ fn do_status() -> Result<()> {
     // print each service found
     for service in services {
         println!("{}", service);
+        if want_verbose && !service.messages.is_empty() {
+            for message in service.messages {
+                eprintln!(">  {}", Style::default().dimmed().paint(message));
+            }
+        }
     }
 
     println!();

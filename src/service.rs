@@ -63,6 +63,7 @@ pub struct Service {
     pub pid: Option<pid_t>,
     pub start_time: Option<time::SystemTime>,
     pub pstree: Option<Result<String>>,
+    pub messages: Vec<String>,
 }
 
 impl Service {
@@ -74,6 +75,7 @@ impl Service {
             .ok_or_else(|| anyhow!("{:?}: failed to parse name from service", service.path))?
             .to_string();
 
+        let mut messages: Vec<String> = vec![];
         let enabled = service.enabled();
         let pid = service.get_pid();
         let state = service.get_state();
@@ -86,7 +88,9 @@ impl Service {
                     command = Some(cmd);
                 }
                 Err(err) => {
-                    println!("{:?}: failed to get command for pid {}: {:?}", service.path, p, err); // fix this
+                    messages.push(format!(
+                            "{:?}: failed to get command for pid {}: {:?}",
+                            service.path, p, err));
                 }
             };
         }
@@ -94,7 +98,7 @@ impl Service {
         let pid = match pid {
             Ok(pid) => Some(pid),
             Err(ref err) => {
-                println!("{:?}: failed to get pid: {}", service.path, err); // fix this
+                messages.push(format!("{:?}: failed to get pid: {}", service.path, err));
                 None
             }
         };
@@ -113,7 +117,7 @@ impl Service {
             RunitServiceState::Unknown => ServiceState::Unknown,
         };
 
-        Ok(Self {
+        let obj = Self {
             name,
             state,
             enabled,
@@ -121,7 +125,10 @@ impl Service {
             pid,
             start_time,
             pstree,
-        })
+            messages,
+        };
+
+        Ok(obj)
     }
 
     fn format_name(&self) -> String {
