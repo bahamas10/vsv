@@ -130,18 +130,31 @@ impl fmt::Display for Service {
         let state_style = self.state.get_style();
 
         let status_char = self.state.get_char();
-        let status_char = state_style.paint(status_char.as_str());
+        let status_char = (status_char.as_str(), &state_style);
+
+        let name = (self.name.as_str(), &Style::default());
 
         let state = self.state.to_string();
-        let state = state_style.paint(state.as_str());
+        let state = (state.as_str(), &state_style);
 
-        let name = Style::default().paint(self.name.as_str());
+        let enabled_s = self.enabled.to_string();
+        let enabled = match self.enabled {
+            true => Style::default().fg(Color::Green),
+            false => Style::default().fg(Color::Red),
+        };
+        let enabled = (enabled_s.as_str(), &enabled);
+
+        let pid = match self.pid {
+            Some(pid) => pid.to_string(),
+            None => String::from("---"),
+        };
+        let pid = (pid.as_str(), &Style::default().fg(Color::Magenta));
 
         let command = match &self.command {
             Some(cmd) => cmd,
             None => "---",
         };
-        let command = Color::Green.paint(command);
+        let command = (command, &Style::default().fg(Color::Green));
 
         let time = match self.start_time {
             Some(time) => {
@@ -152,19 +165,7 @@ impl fmt::Display for Service {
             },
             None => String::from("---"),
         };
-        let time = Style::default().dimmed().paint(time.as_str());
-
-        let enabled = match self.enabled {
-            true => Color::Green.paint("true"),
-            false => Color::Red.paint("false"),
-        };
-
-        let pid = match self.pid {
-            Some(pid) => pid.to_string(),
-            None => String::from("---"),
-        };
-
-        let pid = Color::Magenta.paint(pid.as_str());
+        let time = (time.as_str(), &Style::default().dimmed());
 
         let mut base = utils::format_status_line(
             status_char,

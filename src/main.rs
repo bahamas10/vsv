@@ -69,13 +69,13 @@ fn do_status() -> Result<()> {
     println!();
     println!("found {} services in {:?}", services.len(), svdir); // verbose
     println!("{}", utils::format_status_line(
-        bold_style.paint(""),
-        bold_style.paint("SERVICE"),
-        bold_style.paint("STATE"),
-        bold_style.paint("ENABLED"),
-        bold_style.paint("PID"),
-        bold_style.paint("COMMAND"),
-        bold_style.paint("TIME"),
+        ("", &bold_style),
+        ("SERVICE", &bold_style),
+        ("STATE", &bold_style),
+        ("ENABLED", &bold_style),
+        ("PID", &bold_style),
+        ("COMMAND", &bold_style),
+        ("TIME", &bold_style),
     ));
 
     // print each service found

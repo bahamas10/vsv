@@ -7,32 +7,32 @@ use std::ffi::OsString;
 use std::process::Command;
 
 use anyhow::{anyhow, Context, Result};
-use yansi::Paint;
+use yansi::Style;
 use lazy_static::lazy_static;
-
-const PROC_DIR: &str = "/proc";
 
 /*
  * Make the proc dir var (overrideable via env vars) accessible everywhere after first access.
  */
 lazy_static! {
     static ref PROC_PATH: path::PathBuf = {
-        let procdir = match env::var_os("PROC_DIR") {
+        let proc_default = "/proc";
+        let proc_dir = match env::var_os("PROC_DIR") {
             Some(dir) => dir,
-            None => OsString::from(PROC_DIR),
+            None => OsString::from(proc_default),
         };
-        path::PathBuf::from(&procdir)
+
+        path::PathBuf::from(&proc_dir)
     };
 }
 
-pub fn format_status_line(
-    status_char: Paint<&str>,
-    name: Paint<&str>,
-    state: Paint<&str>,
-    enabled: Paint<&str>,
-    pid: Paint<&str>,
-    command: Paint<&str>,
-    time: Paint<&str>) -> String {
+pub fn format_status_line<T: AsRef<str>>(
+    status_char: (T, &Style),
+    name: (T, &Style),
+    state: (T, &Style),
+    enabled: (T, &Style),
+    pid: (T, &Style),
+    command: (T, &Style),
+    time: (T, &Style)) -> String {
 
     let status_char_len = 1;
     let name_len = 20;
@@ -40,23 +40,24 @@ pub fn format_status_line(
     let enabled_len = 9;
     let pid_len = 8;
     let command_len = 17;
-    // time is unmodified (it's the end of the output)
+    let time_len = 100;
 
-    let status_char = trim_long_paint(&status_char, status_char_len, "");
-    let name = trim_long_paint(&name, name_len, "...");
-    let state = trim_long_paint(&state, state_len, "...");
-    let enabled = trim_long_paint(&enabled, enabled_len, "...");
-    let pid = trim_long_paint(&pid, pid_len, "...");
-    let command = trim_long_paint(&command, command_len, "...");
+    let status_char_s = trim_long_string(status_char.0.as_ref(), status_char_len, "");
+    let name_s = trim_long_string(name.0.as_ref(), name_len, "...");
+    let state_s = trim_long_string(state.0.as_ref(), state_len, "...");
+    let enabled_s = trim_long_string(enabled.0.as_ref(), enabled_len, "...");
+    let pid_s = trim_long_string(pid.0.as_ref(), pid_len, "...");
+    let command_s = trim_long_string(pid.0.as_ref(), command_len, "...");
+    let time_s = trim_long_string(time.0.as_ref(), time_len, "...");
 
     format!("  {0:1$} {2:3$} {4:5$} {6:7$} {8:9$} {10:11$} {12}",
-        status_char, status_char_len,
-        name, name_len,
-        state, state_len,
-        enabled, enabled_len,
-        pid, pid_len,
-        command, command_len,
-        time)
+        status_char.1.paint(status_char_s), status_char_len,
+        name.1.paint(name_s), name_len,
+        state.1.paint(state_s), state_len,
+        enabled.1.paint(enabled_s), enabled_len,
+        pid.1.paint(pid_s), pid_len,
+        command.1.paint(command_s), command_len,
+        time.1.paint(time_s))
 }
 
 pub fn cmd_from_pid(pid: pid_t) -> Result<String> {
@@ -118,15 +119,6 @@ pub fn relative_duration(t: time::Duration) -> String {
     }
 
     String::from("0 seconds")
-}
-
-pub fn trim_long_paint(p: &Paint<&str>, limit: usize, suffix: &str) -> Paint<String> {
-    let style = p.style();
-    let s = p.inner();
-
-    let new_s = trim_long_string(s, limit, suffix);
-
-    style.paint(new_s)
 }
 
 pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
