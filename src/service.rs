@@ -123,40 +123,39 @@ impl Service {
             pstree,
         })
     }
-}
 
-impl fmt::Display for Service {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let state_style = self.state.get_style();
+    fn format_name(&self) -> String {
+        self.name.to_string()
+    }
 
-        let status_char = self.state.get_char();
-        let status_char = (status_char.as_str(), &state_style);
+    fn format_status_char(&self) -> String {
+        self.state.get_char()
+    }
 
-        let name = (self.name.as_str(), &Style::default());
+    fn format_state(&self) -> String {
+        self.state.to_string()
+    }
 
-        let state = self.state.to_string();
-        let state = (state.as_str(), &state_style);
+    fn format_enabled(&self) -> String {
+        self.enabled.to_string()
+    }
 
-        let enabled_s = self.enabled.to_string();
-        let enabled = match self.enabled {
-            true => Style::default().fg(Color::Green),
-            false => Style::default().fg(Color::Red),
-        };
-        let enabled = (enabled_s.as_str(), &enabled);
-
-        let pid = match self.pid {
+    fn format_pid(&self) -> String {
+        match self.pid {
             Some(pid) => pid.to_string(),
             None => String::from("---"),
-        };
-        let pid = (pid.as_str(), &Style::default().fg(Color::Magenta));
+        }
+    }
 
-        let command = match &self.command {
-            Some(cmd) => cmd,
-            None => "---",
-        };
-        let command = (command, &Style::default().fg(Color::Green));
+    fn format_command(&self) -> String {
+        match &self.command {
+            Some(cmd) => cmd.clone(),
+            None => String::from("---"),
+        }
+    }
 
-        let time = match self.start_time {
+    fn format_time(&self) -> String {
+        match self.start_time {
             Some(time) => {
                 match time.elapsed() {
                     Ok(t) => utils::relative_duration(t),
@@ -164,8 +163,31 @@ impl fmt::Display for Service {
                 }
             },
             None => String::from("---"),
+        }
+    }
+}
+
+impl fmt::Display for Service {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let state_style = self.state.get_style();
+
+        let status_char = (self.format_status_char(), &state_style);
+
+        let name = (self.format_name(), &Style::default());
+
+        let state = (self.format_state(), &state_style);
+
+        let enabled = match self.enabled {
+            true => Style::default().fg(Color::Green),
+            false => Style::default().fg(Color::Red),
         };
-        let time = (time.as_str(), &Style::default().dimmed());
+        let enabled = (self.format_enabled(), &enabled);
+
+        let pid = (self.format_pid(), &Style::default().fg(Color::Magenta));
+
+        let command = (self.format_command(), &Style::default().fg(Color::Green));
+
+        let time = (self.format_time(), &Style::default().dimmed());
 
         let mut base = utils::format_status_line(
             status_char,
@@ -176,6 +198,7 @@ impl fmt::Display for Service {
             command,
             time);
 
+        // add pstree if applicable
         if let Some(tree) = &self.pstree {
             let tree_s = match tree {
                 Ok(stdout) => Style::default().dimmed().paint(stdout.trim().to_string()),
