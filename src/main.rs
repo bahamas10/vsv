@@ -75,7 +75,7 @@ fn do_status() -> Result<()> {
     // print each service found
     for service in services {
         println!("{}", service);
-        if want_verbose && !service.messages.is_empty() {
+        if want_verbose {
             for message in service.messages {
                 eprintln!(">  {}", Style::default().dimmed().paint(message));
             }
