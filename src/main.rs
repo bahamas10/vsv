@@ -16,6 +16,7 @@ use yansi::{Color, Style, Paint};
 use anyhow::{Context, Result};
 use rayon::prelude::*;
 
+mod config;
 mod die;
 mod runit;
 mod utils;
@@ -24,12 +25,10 @@ mod service;
 use die::die;
 use service::Service;
 
-const SERVICE_DIR: &str = "/var/service";
-
 fn do_status() -> Result<()> {
     // get SVDIR from env or use default
-    let svdir = env::var_os("SVDIR")
-        .unwrap_or_else(|| OsString::from(SERVICE_DIR) );
+    let svdir = env::var_os(config::ENV_SVDIR)
+        .unwrap_or_else(|| OsString::from(config::DEFAULT_SVDIR) );
     let svdir = path::Path::new(&svdir);
 
     // check env

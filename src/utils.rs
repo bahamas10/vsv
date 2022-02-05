@@ -10,15 +10,16 @@ use anyhow::{anyhow, Context, Result};
 use yansi::Style;
 use lazy_static::lazy_static;
 
+use crate::config;
+
 /*
  * Make the proc dir var (overrideable via env vars) accessible everywhere after first access.
  */
 lazy_static! {
     static ref PROC_PATH: path::PathBuf = {
-        let proc_default = "/proc";
-        let proc_dir = match env::var_os("PROC_DIR") {
+        let proc_dir = match env::var_os(config::ENV_PROC_DIR) {
             Some(dir) => dir,
-            None => OsString::from(proc_default),
+            None => OsString::from(config::DEFAULT_PROC_DIR),
         };
 
         path::PathBuf::from(&proc_dir)
@@ -143,7 +144,7 @@ pub fn isatty(fd: c_int) -> bool {
 
 pub fn should_colorize_output() -> bool {
     let isatty = isatty(1);
-    let no_color_env = env::var_os("NO_COLOR").is_some();
+    let no_color_env = env::var_os(config::ENV_NO_COLOR).is_some();
 
     if no_color_env {
         false
