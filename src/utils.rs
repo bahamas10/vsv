@@ -142,3 +142,14 @@ pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
 pub fn isatty(fd: c_int) -> bool {
     unsafe { libc::isatty(fd) != 0 }
 }
+
+pub fn should_colorize_output() -> bool {
+    let isatty = isatty(1);
+    let no_color_env = env::var_os("NO_COLOR").is_some();
+
+    if no_color_env {
+        false
+    } else {
+        isatty
+    }
+}

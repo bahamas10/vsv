@@ -47,7 +47,8 @@ fn do_status() -> Result<()> {
     let want_pstree = env::var_os("PSTREE").is_some();
 
     // find all services
-    let services = runit::get_services(svdir).context("failed to list services")?;
+    let services = runit::get_services(svdir)
+        .context(format!("failed to list services in {:?}", svdir))?;
 
     // process each service found (just gather data here, can be done in parallel)
     let services: Vec<Service> = services
@@ -89,19 +90,13 @@ fn do_status() -> Result<()> {
 }
 
 fn main() {
-    let isatty = utils::isatty(1);
-    let no_color_env = env::var_os("NO_COLOR").is_some();
     let want_color = None;
 
     let colorize = if let Some(want_color) = want_color {
         // -c takes precedence
         want_color
-    } else if no_color_env {
-        // env variable is next line
-        false
     } else {
-        // finally, set color to be dependent on stdout being a TTY
-        isatty
+        utils::should_colorize_output()
     };
 
     if colorize {
