@@ -48,7 +48,7 @@ fn do_status() -> Result<()> {
 
     // find all services
     let services = runit::get_services(svdir)
-        .context(format!("failed to list services in {:?}", svdir))?;
+        .with_context(|| format!("failed to list services in {:?}", svdir))?;
 
     // process each service found (just gather data here, can be done in parallel)
     let services: Vec<Service> = services
