@@ -76,13 +76,13 @@ fn should_colorize_output(color_arg: Option<String>) -> Result<bool> {
     Ok(val)
 }
 
+/* Check svdir in this order:
+ *
+ * 1. CLI option (`-d`) given
+ * 2. env SVDIR given
+ * 3. use DEFAULT_SVDIR
+ */
 fn get_svdir(dir_arg: Option<path::PathBuf>) -> path::PathBuf {
-    /* Check svdir in this order:
-     *
-     * 1. CLI option (`-d`) given
-     * 2. env SVDIR given
-     * 3. use DEFAULT_SVDIR
-     */
     match dir_arg {
         Some(dir) => dir,
         None => {

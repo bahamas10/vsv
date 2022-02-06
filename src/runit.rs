@@ -33,12 +33,14 @@ impl RunitService {
     }
 
     pub fn enabled(&self) -> bool {
+        // "/<svdir>/<service>/down"
         let p = self.path.join("down");
 
         ! p.exists()
     }
 
     pub fn get_pid(&self) -> Result<pid_t> {
+        // "/<svdir>/<service>/supervise/pid"
         let p = self.path.join("supervise").join("pid");
 
         let pid: pid_t = fs::read_to_string(p)?.trim().parse()?;
@@ -47,6 +49,7 @@ impl RunitService {
     }
 
     pub fn get_state(&self) -> RunitServiceState {
+        // "/<svdir>/<service>/supervise/stat"
         let p = self.path.join("supervise").join("stat");
 
         let s = fs::read_to_string(p).unwrap_or_else(|_| String::from("unknown"));
@@ -60,6 +63,7 @@ impl RunitService {
     }
 
     pub fn get_start_time(&self) -> Result<time::SystemTime> {
+        // "/<svdir>/<service>/supervise/stat"
         let p = self.path.join("supervise").join("stat");
 
         Ok(fs::metadata(p)?.modified()?)
