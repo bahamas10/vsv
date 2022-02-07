@@ -55,6 +55,7 @@ impl Config {
  * 3. stdout is a tty
  */
 fn should_colorize_output(color_arg: Option<String>) -> Result<bool> {
+    // check CLI option first
     if let Some(s) = color_arg {
         match s.as_str() {
             "yes" | "on" => return Ok(true),
@@ -64,16 +65,15 @@ fn should_colorize_output(color_arg: Option<String>) -> Result<bool> {
         }
     }
 
+    // check env var next
+    if env::var_os(config::ENV_NO_COLOR).is_some() {
+        return Ok(false);
+    }
+
+    // lastly check if stdout is a tty
     let isatty = utils::isatty(1);
-    let no_color_env = env::var_os(config::ENV_NO_COLOR).is_some();
 
-    let val = if no_color_env {
-        false
-    } else {
-        isatty
-    };
-
-    Ok(val)
+    Ok(isatty)
 }
 
 /* Check svdir in this order:
