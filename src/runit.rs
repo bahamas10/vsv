@@ -11,7 +11,7 @@ use std::fs;
 use std::path;
 use std::time;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 pub enum RunitServiceState {
     Run,
@@ -23,12 +23,15 @@ pub enum RunitServiceState {
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RunitService {
     pub path: path::PathBuf,
+    pub name: String,
 }
 
 impl RunitService {
-    pub fn new(path: path::PathBuf) -> Self {
+    pub fn new(path: path::PathBuf, name: &str) -> Self {
+        let name = name.to_string();
         Self {
-            path
+            path,
+            name,
         }
     }
 
@@ -70,7 +73,7 @@ impl RunitService {
     }
 }
 
-pub fn get_services(path: &path::Path) -> Result<Vec<RunitService>> {
+pub fn get_services(path: &path::Path, log: bool) -> Result<Vec<RunitService>> {
     // loop services directory and collect service names
     let mut dirs = Vec::new();
 
@@ -82,9 +85,22 @@ pub fn get_services(path: &path::Path) -> Result<Vec<RunitService>> {
             continue;
         }
 
-        let service = RunitService::new(p);
+        let name = p
+            .file_name()
+            .ok_or_else(|| anyhow!("{:?}: failed to get name from service", p))?
+            .to_str()
+            .ok_or_else(|| anyhow!("{:?}: failed to parse name from service", p))?
+            .to_string();
 
+        let service = RunitService::new(p, &name);
         dirs.push(service);
+
+        if log {
+            let p = entry.path().join("log");
+            let name = "- log";
+            let service = RunitService::new(p, name);
+            dirs.push(service);
+        }
     }
 
     dirs.sort();

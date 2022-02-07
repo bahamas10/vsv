@@ -34,20 +34,14 @@ macro_rules! verbose {
 
 fn do_status(cfg: &Config) -> Result<()> {
     // find all services
-    let services = runit::get_services(&cfg.svdir)
+    let services = runit::get_services(&cfg.svdir, cfg.log)
         .with_context(|| format!("failed to list services in {:?}", cfg.svdir))?;
 
     // process each service found (just gather data here, can be done in parallel)
     let services: Vec<Service> = services
         .par_iter()
-        .filter_map(|service| {
-            match Service::from_runit_service(service, cfg.tree) {
-                Ok(svc) => Some(svc),
-                Err(err) => {
-                    eprintln!("failed to process service {:?}: {}", service, err);
-                    None
-                }
-            }
+        .map(|service| {
+            Service::from_runit_service(service, cfg.tree)
         })
         .collect();
 

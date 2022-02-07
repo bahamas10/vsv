@@ -11,19 +11,22 @@ make-service() {
 	local state=$2
 	local pid=$3
 
-	local dir=$servicedir/$name
+	local dir proc f
+	for f in "$name" "$name/log"; do
+		dir=$servicedir/$f
 
-	echo "creating $dir: (pid '$pid' state '$state')"
+		echo "creating $dir: (pid '$pid' state '$state')"
 
-	mkdir -p "$dir"
-	mkdir -p "$dir/supervise"
-	echo "$state" > "$dir/supervise/stat"
-	echo "$pid" > "$dir/supervise/pid"
+		mkdir -p "$dir"
+		mkdir -p "$dir/supervise"
+		echo "$state" > "$dir/supervise/stat"
+		echo "$pid" > "$dir/supervise/pid"
 
-	local proc=$procdir/$pid
-	echo "creating $proc"
-	mkdir -p "$proc"
-	printf '%s-command\0arg1\0arg2\0' "$name" > "$proc/cmdline"
+		proc=$procdir/$pid
+		echo "creating $proc"
+		mkdir -p "$proc"
+		printf '%s-command\0arg1\0arg2\0' "$name" > "$proc/cmdline"
+	done
 }
 
 make-service 'foo' 'run' 123

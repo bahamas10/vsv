@@ -2,7 +2,7 @@ use libc::pid_t;
 use std::fmt;
 use std::time;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use yansi::{Style, Color};
 
 use crate::runit::{RunitService, RunitServiceState};
@@ -67,15 +67,9 @@ pub struct Service {
 }
 
 impl Service {
-    pub fn from_runit_service(service: &RunitService, want_pstree: bool) -> Result<Self> {
-        let name = service.path
-            .file_name()
-            .ok_or_else(|| anyhow!("{:?}: failed to get name from service", service.path))?
-            .to_str()
-            .ok_or_else(|| anyhow!("{:?}: failed to parse name from service", service.path))?
-            .to_string();
-
+    pub fn from_runit_service(service: &RunitService, want_pstree: bool) -> Self {
         let mut messages: Vec<String> = vec![];
+        let name = service.name.to_string();
         let enabled = service.enabled();
         let pid = service.get_pid();
         let state = service.get_state();
@@ -117,7 +111,7 @@ impl Service {
             RunitServiceState::Unknown => ServiceState::Unknown,
         };
 
-        let obj = Self {
+        Self {
             name,
             state,
             enabled,
@@ -126,9 +120,7 @@ impl Service {
             start_time,
             pstree,
             messages,
-        };
-
-        Ok(obj)
+        }
     }
 
     fn format_name(&self) -> String {
