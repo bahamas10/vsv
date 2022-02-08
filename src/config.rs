@@ -34,16 +34,13 @@ impl Config {
         let colorize = should_colorize_output(&args.color)?;
         let svdir = get_svdir(&args.dir);
 
-        match args.command {
-            Some(Commands::Status { tree: _tree, log: _log }) => {
-                if _tree {
-                    tree = true;
-                }
-                if _log {
-                    log = true;
-                }
-            },
-            _ => (),
+        if let Some(Commands::Status { tree: _tree, log: _log }) = args.command {
+            if _tree {
+                tree = true;
+            }
+            if _log {
+                log = true;
+            }
         };
 
         let o = Self {
