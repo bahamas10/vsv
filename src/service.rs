@@ -100,7 +100,7 @@ impl Service {
         let mut pstree = None;
         if want_pstree {
             if let Some(pid) = pid {
-                pstree = Some(get_pstree(pid))
+                pstree = Some(get_pstree(pid));
             }
         }
 

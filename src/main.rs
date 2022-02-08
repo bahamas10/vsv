@@ -43,7 +43,7 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
 
     if args.len() < 2 {
         return Err(anyhow!("argument expected for '{} {}'",
-                sv, args[0]));
+            sv, args[0]));
     }
 
     // format arguments
@@ -53,14 +53,13 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     env::set_var(config::ENV_SVDIR, &cfg.svdir);
 
     println!("[{}] {}", crate_name!(), Color::Cyan.paint(format!(
-                "Running {} command ({}={:?} {} {})",
-                sv,
-                config::ENV_SVDIR,
-                &cfg.svdir,
-                sv,
-                &args_s)));
+        "Running {} command ({}={:?} {} {})",
+        sv, config::ENV_SVDIR, &cfg.svdir, sv, &args_s)));
 
+    // run the actual program
     let status = utils::run_program_get_status(sv.to_string(), args);
+
+    // check the process status
     match status {
         Ok(status) => {
             let code = status.code().unwrap_or(-1);
@@ -69,11 +68,10 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
                 _ => Color::Red,
             };
 
+            // print exit code
             println!("[{}] {}", crate_name!(), color.paint(format!(
-                        "[{} {}] exit code {}",
-                        sv,
-                        &args_s,
-                        code)));
+                "[{} {}] exit code {}",
+                sv, &args_s, code)));
 
             match code {
                 0 => Ok(()),
@@ -92,9 +90,7 @@ fn do_status(cfg: &Config) -> Result<()> {
     // process each service found (just gather data here, can be done in parallel)
     let services: Vec<Service> = services
         .par_iter()
-        .map(|service| {
-            Service::from_runit_service(service, cfg.tree)
-        })
+        .map(|service| Service::from_runit_service(service, cfg.tree))
         .collect();
 
     // print gathared data
@@ -142,12 +138,8 @@ fn do_main() -> Result<()> {
 
     // figure out subcommand to run
     match &args.command {
-        None | Some(Commands::Status { .. }) => {
-            do_status(&cfg)
-        },
-        Some(Commands::External(args)) => {
-            do_external(&cfg, args)
-        },
+        Some(Commands::External(args)) => do_external(&cfg, args),
+        None | Some(Commands::Status { .. }) => do_status(&cfg),
     }
 }
 
@@ -155,8 +147,6 @@ fn main() {
     let ret = do_main();
 
     if let Err(err) = ret {
-        die!(1, "{}: {:?}",
-            Color::Red.paint("error"),
-            err);
+        die!(1, "{}: {:?}", Color::Red.paint("error"), err);
     }
 }

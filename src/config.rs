@@ -58,7 +58,10 @@ impl Config {
         let colorize = should_colorize_output(&args.color)?;
         let svdir = get_svdir(&args.dir);
 
-        if let Some(Commands::Status { tree: _tree, log: _log }) = args.command {
+        if let Some(Commands::Status {
+            tree: _tree,
+            log: _log
+        }) = args.command {
             if _tree {
                 tree = true;
             }
