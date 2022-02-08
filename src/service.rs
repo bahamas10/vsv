@@ -61,7 +61,7 @@ pub struct Service {
     enabled: bool,
     command: Option<String>,
     pid: Option<pid_t>,
-    start_time: Option<time::SystemTime>,
+    start_time: Result<time::SystemTime>,
     pstree: Option<Result<String>>,
     want_pstree: bool,
 }
@@ -73,7 +73,7 @@ impl Service {
         let enabled = service.enabled();
         let pid = service.get_pid();
         let state = service.get_state();
-        let start_time = service.get_start_time().ok();
+        let start_time = service.get_start_time();
 
         let mut command = None;
         if let Ok(p) = pid {
@@ -158,13 +158,13 @@ impl Service {
 
     fn format_time(&self) -> String {
         match &self.start_time {
-            Some(time) => {
+            Ok(time) => {
                 match time.elapsed() {
                     Ok(t) => utils::relative_duration(t),
                     Err(err) => err.to_string(),
                 }
             },
-            None => String::from("---"),
+            Err(err) => err.to_string()
         }
     }
 
