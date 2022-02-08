@@ -28,7 +28,7 @@ pub fn format_status_line<T: AsRef<str>>(
         (time,        99, "..."),
     ];
 
-    let mut line = String::from(" ");
+    let mut line = String::new();
 
     for (o, max, suffix) in data {
         let (text, style) = o;
