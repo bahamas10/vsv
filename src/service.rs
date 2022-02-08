@@ -96,12 +96,16 @@ impl Service {
             }
         };
 
-        let mut pstree = None;
-        if want_pstree {
-            if let Some(pid) = pid {
-                pstree = Some(get_pstree(pid));
-            }
-        }
+        // optionally get pstree.  None if the user wants it, Some if the user wants it regardless
+        // of execution success.
+        let pstree = if want_pstree {
+            Some(match pid {
+                Some(pid) => get_pstree(pid),
+                None => Ok(String::from("\n")),
+            })
+        } else {
+            None
+        };
 
         let state = match state {
             RunitServiceState::Run => ServiceState::Run,
