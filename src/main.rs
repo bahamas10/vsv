@@ -39,11 +39,11 @@ macro_rules! verbose {
 fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     assert!(!args.is_empty());
 
-    let sv_command = "sv";
+    let sv = config::SV_PROG.to_owned();
 
     if args.len() < 2 {
         return Err(anyhow!("argument expected for '{} {}'",
-                sv_command, args[0]));
+                sv, args[0]));
     }
 
     // format arguments
@@ -54,13 +54,13 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
 
     println!("[{}] {}", crate_name!(), Color::Cyan.paint(format!(
                 "Running {} command ({}={:?} {} {})",
-                sv_command,
+                sv,
                 config::ENV_SVDIR,
                 &cfg.svdir,
-                sv_command,
+                sv,
                 &args_s)));
 
-    let status = utils::run_program_get_status(sv_command.to_string(), args);
+    let status = utils::run_program_get_status(sv.to_string(), args);
     match status {
         Ok(status) => {
             let code = status.code().unwrap_or(-1);
@@ -71,16 +71,16 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
 
             println!("[{}] {}", crate_name!(), color.paint(format!(
                         "[{} {}] exit code {}",
-                        sv_command,
+                        sv,
                         &args_s,
                         code)));
 
             match code {
                 0 => Ok(()),
-                _ => Err(anyhow!("call to {} failed", sv_command)),
+                _ => Err(anyhow!("call to {} failed", sv)),
             }
         },
-        Err(err) => Err(anyhow!("failed to execute {}: {}", sv_command, err))
+        Err(err) => Err(anyhow!("failed to execute {}: {}", sv, err))
     }
 }
 

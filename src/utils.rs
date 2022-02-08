@@ -1,30 +1,12 @@
 use libc::{pid_t, c_int};
-use std::env;
 use std::fs;
-use std::path;
 use std::time;
-use std::ffi::OsString;
 use std::process::{Command, ExitStatus};
 
 use anyhow::{anyhow, Context, Result};
 use yansi::Style;
-use lazy_static::lazy_static;
 
 use crate::config;
-
-/*
- * Make the proc dir var (overrideable via env vars) accessible everywhere after first access.
- */
-lazy_static! {
-    static ref PROC_PATH: path::PathBuf = {
-        let proc_dir = match env::var_os(config::ENV_PROC_DIR) {
-            Some(dir) => dir,
-            None => OsString::from(config::DEFAULT_PROC_DIR),
-        };
-
-        path::PathBuf::from(&proc_dir)
-    };
-}
 
 pub fn format_status_line<T: AsRef<str>>(
     status_char: (T, &Style),
@@ -62,7 +44,7 @@ pub fn format_status_line<T: AsRef<str>>(
 
 pub fn cmd_from_pid(pid: pid_t) -> Result<String> {
     // /proc/<pid>/cmdline
-    let p = PROC_PATH.join(pid.to_string()).join("cmdline");
+    let p = config::PROC_PATH.join(pid.to_string()).join("cmdline");
 
     let data = fs::read_to_string(&p)
         .with_context(|| format!("failed to read pid file: {:?}", p))?;

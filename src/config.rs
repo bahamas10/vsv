@@ -3,6 +3,7 @@ use std::env;
 use std::ffi::OsString;
 
 use anyhow::{anyhow, Result};
+use lazy_static::lazy_static;
 
 use crate::arguments::{Args, Commands};
 use crate::config;
@@ -11,11 +12,34 @@ use crate::utils;
 // default values
 pub const DEFAULT_SVDIR: &str = "/var/service";
 pub const DEFAULT_PROC_DIR: &str = "/proc";
+pub const DEFAULT_SV_PROG: &str = "sv";
+pub const DEFAULT_PSTREE_PROG: &str = "pstree";
 
 // env variables used by this program
 pub const ENV_NO_COLOR: &str = "NO_COLOR";
 pub const ENV_SVDIR: &str = "SVDIR";
 pub const ENV_PROC_DIR: &str = "PROC_DIR";
+pub const ENV_SV_PROG: &str = "SV_PROG";
+pub const ENV_PSTREE_PROG: &str = "PSTREE_PROG";
+
+lazy_static! {
+    pub static ref PROC_PATH: path::PathBuf = {
+        let d = env::var_os(config::ENV_PROC_DIR)
+            .unwrap_or_else(|| OsString::from(DEFAULT_PROC_DIR));
+
+        path::PathBuf::from(&d)
+    };
+
+    pub static ref SV_PROG: String = {
+        env::var(config::ENV_SV_PROG)
+            .unwrap_or_else(|_| DEFAULT_SV_PROG.to_string())
+    };
+
+    pub static ref PSTREE_PROG: String = {
+        env::var(config::ENV_PSTREE_PROG)
+            .unwrap_or_else(|_| DEFAULT_PSTREE_PROG.to_string())
+    };
+}
 
 #[derive(Debug)]
 pub struct Config {

@@ -6,8 +6,8 @@ use anyhow::Result;
 use yansi::{Style, Color};
 
 use crate::runit::{RunitService, RunitServiceState};
-
 use crate::utils;
+use crate::config;
 
 pub enum ServiceState {
     Run,
@@ -211,10 +211,10 @@ impl fmt::Display for Service {
 }
 
 fn get_pstree(pid: pid_t) -> Result<String> {
-    let cmd = "pstree";
+    let cmd = config::PSTREE_PROG.to_owned();
     let args = [
         "-ac",
         &pid.to_string(),
     ];
-    utils::run_program_get_output(cmd, &args)
+    utils::run_program_get_output(cmd.as_str(), &args)
 }
