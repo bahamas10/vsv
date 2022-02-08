@@ -211,5 +211,10 @@ impl fmt::Display for Service {
 }
 
 fn get_pstree(pid: pid_t) -> Result<String> {
-    utils::run_program(&["pstree", "-ac", &pid.to_string()])
+    let cmd = "pstree";
+    let args = [
+        "-ac",
+        &pid.to_string(),
+    ];
+    utils::run_program_get_output(cmd, &args)
 }

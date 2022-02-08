@@ -4,7 +4,7 @@ use std::fs;
 use std::path;
 use std::time;
 use std::ffi::OsString;
-use std::process::Command;
+use std::process::{Command, ExitStatus};
 
 use anyhow::{anyhow, Context, Result};
 use yansi::Style;
@@ -53,7 +53,8 @@ pub fn format_status_line<T: AsRef<str>>(
 
         let text = trim_long_string(text.as_ref(), max, suffix);
 
-        line = format!("{0} {1:2$}", line, style.paint(text), max);
+        let column = format!(" {0:1$}", style.paint(text), max);
+        line.push_str(&column);
     }
 
     line
@@ -74,23 +75,32 @@ pub fn cmd_from_pid(pid: pid_t) -> Result<String> {
     }
 }
 
-pub fn run_program(args: &[&str]) -> Result<String> {
-    assert!(!args.is_empty(), "run_program requires at least 1 argument");
-
-    let cmd = &args[0];
-    let args = &args[1..];
-
-    let output = Command::new(cmd)
-        .args(args)
-        .output()?;
+pub fn run_program_get_output<T: AsRef<str>>(cmd: T, args: &[T]) -> Result<String> {
+    let output = make_command(cmd, args).output()?;
 
     if ! output.status.success() {
-        return Err(anyhow!("program '{}' returned non-zero", cmd));
+        return Err(anyhow!("program '{:?}' returned non-zero", args[0].as_ref()));
     }
 
     let stdout = String::from_utf8(output.stdout)?;
 
     Ok(stdout)
+}
+
+pub fn run_program_get_status<T: AsRef<str>>(cmd: T, args: &[T]) -> Result<ExitStatus> {
+    let p = make_command(cmd, args).status()?;
+
+    Ok(p)
+}
+
+fn make_command<T: AsRef<str>>(cmd: T, args: &[T]) -> Command {
+    let mut c = Command::new(cmd.as_ref());
+
+    for arg in args {
+        c.arg(arg.as_ref());
+    }
+
+    c
 }
 
 pub fn relative_duration(t: time::Duration) -> String {

@@ -4,7 +4,7 @@ use std::ffi::OsString;
 
 use anyhow::{anyhow, Result};
 
-use crate::arguments::Args;
+use crate::arguments::{Args, Commands};
 use crate::config;
 use crate::utils;
 
@@ -27,12 +27,24 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_args(args: Args) -> Result<Self> {
-        let tree = args.tree;
-        let log = args.log;
+    pub fn from_args(args: &Args) -> Result<Self> {
+        let mut tree = args.tree;
+        let mut log = args.log;
         let verbose = args.verbose;
-        let colorize = should_colorize_output(args.color)?;
-        let svdir = get_svdir(args.dir);
+        let colorize = should_colorize_output(&args.color)?;
+        let svdir = get_svdir(&args.dir);
+
+        match args.command {
+            Some(Commands::Status { tree: _tree, log: _log }) => {
+                if _tree {
+                    tree = true;
+                }
+                if _log {
+                    log = true;
+                }
+            },
+            _ => (),
+        };
 
         let o = Self {
             colorize,
@@ -54,7 +66,7 @@ impl Config {
  * 2. env NO_COLOR given
  * 3. stdout is a tty
  */
-fn should_colorize_output(color_arg: Option<String>) -> Result<bool> {
+fn should_colorize_output(color_arg: &Option<String>) -> Result<bool> {
     // check CLI option first
     if let Some(s) = color_arg {
         match s.as_str() {
@@ -82,9 +94,9 @@ fn should_colorize_output(color_arg: Option<String>) -> Result<bool> {
  * 2. env SVDIR given
  * 3. use DEFAULT_SVDIR
  */
-fn get_svdir(dir_arg: Option<path::PathBuf>) -> path::PathBuf {
+fn get_svdir(dir_arg: &Option<path::PathBuf>) -> path::PathBuf {
     match dir_arg {
-        Some(dir) => dir,
+        Some(dir) => dir.to_path_buf(),
         None => {
             let svdir = env::var_os(config::ENV_SVDIR)
                 .unwrap_or_else(|| OsString::from(config::DEFAULT_SVDIR) );

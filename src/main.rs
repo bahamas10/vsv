@@ -8,8 +8,11 @@
  * License: MIT
  */
 
+use std::env;
+
+use clap::crate_name;
 use yansi::{Color, Style, Paint};
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use rayon::prelude::*;
 
 mod arguments;
@@ -22,6 +25,7 @@ mod service;
 use die::die;
 use service::Service;
 use config::Config;
+use arguments::Commands;
 
 macro_rules! verbose {
     ($cfg:expr, $fmt:expr $(, $args:expr )* $(,)? ) => {
@@ -30,6 +34,54 @@ macro_rules! verbose {
             eprintln!(">  {}", Style::default().dimmed().paint(s));
         }
     };
+}
+
+fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
+    assert!(!args.is_empty());
+
+    let sv_command = "sv";
+
+    if args.len() < 2 {
+        return Err(anyhow!("argument expected for '{} {}'",
+                sv_command, args[0]));
+    }
+
+    // format arguments
+    let args_s = args.join(" ");
+
+    // set SVDIR env to match what user wanted
+    env::set_var(config::ENV_SVDIR, &cfg.svdir);
+
+    println!("[{}] {}", crate_name!(), Color::Cyan.paint(format!(
+                "Running {} command ({}={:?} {} {})",
+                sv_command,
+                config::ENV_SVDIR,
+                &cfg.svdir,
+                sv_command,
+                &args_s)));
+
+    let status = utils::run_program_get_status(sv_command.to_string(), args);
+    match status {
+        Ok(status) => {
+            let code = status.code().unwrap_or(-1);
+            let color = match code {
+                0 => Color::Green,
+                _ => Color::Red,
+            };
+
+            println!("[{}] {}", crate_name!(), color.paint(format!(
+                        "[{} {}] exit code {}",
+                        sv_command,
+                        &args_s,
+                        code)));
+
+            match code {
+                0 => Ok(()),
+                _ => Err(anyhow!("call to {} failed", sv_command)),
+            }
+        },
+        Err(err) => Err(anyhow!("failed to execute {}: {}", sv_command, err))
+    }
 }
 
 fn do_status(cfg: &Config) -> Result<()> {
@@ -81,14 +133,22 @@ fn do_main() -> Result<()> {
 
     // parse CLI options + env vars
     let args = arguments::parse();
-    let cfg = Config::from_args(args)?;
+    let cfg = Config::from_args(&args)?;
 
     if cfg.colorize {
         Paint::enable();
     }
 
+
     // figure out subcommand to run
-    do_status(&cfg)
+    match &args.command {
+        None | Some(Commands::Status { .. }) => {
+            do_status(&cfg)
+        },
+        Some(Commands::External(args)) => {
+            do_external(&cfg, args)
+        },
+    }
 }
 
 fn main() {

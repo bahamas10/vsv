@@ -30,17 +30,23 @@ pub struct Args {
     pub verbose: usize,
 
     #[clap(subcommand)]
-    command: Option<Commands>,
+    pub command: Option<Commands>,
 }
 
 #[derive(Debug, Subcommand)]
-enum Commands {
+pub enum Commands {
     /// Show process status
     Status {
-        /// Tree view
+        /// Show associated log processes
+        #[clap(short, long)]
+        log: bool,
+
+        /// Tree view (calls pstree(1) on PIDs found)
         #[clap(short, long)]
         tree: bool,
     },
+    #[clap(external_subcommand)]
+    External(Vec<String>),
 }
 
 pub fn parse() -> Args {
