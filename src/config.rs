@@ -14,6 +14,7 @@ pub const DEFAULT_SVDIR: &str = "/var/service";
 pub const DEFAULT_PROC_DIR: &str = "/proc";
 pub const DEFAULT_SV_PROG: &str = "sv";
 pub const DEFAULT_PSTREE_PROG: &str = "pstree";
+pub const DEFAULT_USER_DIR: &str = "runit/service"; // relative to home dir
 
 // env variables used by this program
 pub const ENV_NO_COLOR: &str = "NO_COLOR";
@@ -58,7 +59,7 @@ impl Config {
         let mut filter = None;
         let verbose = args.verbose;
         let colorize = should_colorize_output(&args.color)?;
-        let svdir = get_svdir(&args.dir);
+        let svdir = get_svdir(&args.dir, args.user)?;
 
         if let Some(Commands::Status {
             tree: _tree,
@@ -126,16 +127,27 @@ fn should_colorize_output(color_arg: &Option<String>) -> Result<bool> {
 /* Check svdir in this order:
  *
  * 1. CLI option (`-d`) given
- * 2. env SVDIR given
- * 3. use DEFAULT_SVDIR
+ * 2. CLI option (`-u`) given
+ * 3. env SVDIR given
+ * 4. use DEFAULT_SVDIR
  */
-fn get_svdir(dir_arg: &Option<path::PathBuf>) -> path::PathBuf {
-    match dir_arg {
-        Some(dir) => dir.to_path_buf(),
-        None => {
-            let svdir = env::var_os(config::ENV_SVDIR)
-                .unwrap_or_else(|| OsString::from(config::DEFAULT_SVDIR) );
-            path::Path::new(&svdir).to_path_buf()
-        }
+fn get_svdir(dir_arg: &Option<path::PathBuf>, user_arg: bool) -> Result<path::PathBuf> {
+    // `-d <dir>`
+    if let Some(dir) = dir_arg {
+        return Ok(dir.to_path_buf());
     }
+
+    // `-u`
+    if user_arg {
+        let home_dir = dirs::home_dir().ok_or_else(
+            || anyhow!("failed to determine users home directory"))?;
+        let buf = home_dir.join(DEFAULT_USER_DIR);
+        return Ok(buf);
+    }
+
+    // env or default
+    let svdir = env::var_os(config::ENV_SVDIR)
+        .unwrap_or_else(|| OsString::from(config::DEFAULT_SVDIR) );
+    let buf = path::PathBuf::from(&svdir);
+    Ok(buf)
 }
