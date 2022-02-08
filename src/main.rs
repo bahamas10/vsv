@@ -118,7 +118,9 @@ fn do_status(cfg: &Config) -> Result<()> {
         }
     }
 
-    println!();
+    if !cfg.tree {
+        println!();
+    }
 
     Ok(())
 }

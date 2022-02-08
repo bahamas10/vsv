@@ -63,6 +63,7 @@ pub struct Service {
     pid: Option<pid_t>,
     start_time: Option<time::SystemTime>,
     pstree: Option<Result<String>>,
+    want_pstree: bool,
 }
 
 impl Service {
@@ -82,8 +83,8 @@ impl Service {
                 }
                 Err(err) => {
                     messages.push(format!(
-                            "{:?}: failed to get command for pid {}: {:?}",
-                            service.path, p, err));
+                        "{:?}: failed to get command for pid {}: {:?}",
+                        service.path, p, err));
                 }
             };
         }
@@ -99,10 +100,7 @@ impl Service {
         // optionally get pstree.  None if the user wants it, Some if the user wants it regardless
         // of execution success.
         let pstree = if want_pstree {
-            Some(match pid {
-                Some(pid) => get_pstree(pid),
-                None => Ok(String::from("\n")),
-            })
+            pid.map(|pid| get_pstree(pid))
         } else {
             None
         };
@@ -122,6 +120,7 @@ impl Service {
             pid,
             start_time,
             pstree,
+            want_pstree,
         };
 
         (svc, messages)
@@ -168,6 +167,21 @@ impl Service {
             None => String::from("---"),
         }
     }
+
+    fn format_pstree(&self) -> String {
+        assert!(&self.want_pstree);
+
+        match &self.pstree {
+            Some(tree) => {
+                let tree_s = match tree {
+                    Ok(stdout) => Style::default().dimmed().paint(stdout.trim().to_string()),
+                    Err(err) => Color::Red.paint(format!("pstree call failed: {}", err)),
+                };
+                format!("\n{}\n", tree_s)
+            },
+            None => "".into(),
+        }
+    }
 }
 
 impl fmt::Display for Service {
@@ -202,12 +216,9 @@ impl fmt::Display for Service {
             time);
 
         // add pstree if applicable
-        if let Some(tree) = &self.pstree {
-            let tree_s = match tree {
-                Ok(stdout) => Style::default().dimmed().paint(stdout.trim().to_string()),
-                Err(err) => Color::Red.paint(format!("pstree call failed: {}", err)),
-            };
-            base = format!("{}\n\n{}\n", base, tree_s);
+        if self.want_pstree {
+            let tree_s = self.format_pstree();
+            base = format!("{}\n{}", base, tree_s);
         }
 
         base.fmt(f)
