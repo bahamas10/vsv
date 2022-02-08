@@ -48,25 +48,31 @@ pub struct Config {
     pub tree: bool,
     pub log: bool,
     pub verbose: usize,
+    filter: Option<String>,
 }
 
 impl Config {
     pub fn from_args(args: &Args) -> Result<Self> {
         let mut tree = args.tree;
         let mut log = args.log;
+        let mut filter = None;
         let verbose = args.verbose;
         let colorize = should_colorize_output(&args.color)?;
         let svdir = get_svdir(&args.dir);
 
         if let Some(Commands::Status {
             tree: _tree,
-            log: _log
-        }) = args.command {
-            if _tree {
+            log: _log,
+            filter: _filter,
+        }) = &args.command {
+            if *_tree {
                 tree = true;
             }
-            if _log {
+            if *_log {
                 log = true;
+            }
+            if !_filter.is_empty() {
+                filter = Some(_filter[0].to_owned());
             }
         };
 
@@ -76,9 +82,14 @@ impl Config {
             tree,
             log,
             verbose,
+            filter,
         };
 
         Ok(o)
+    }
+
+    pub fn get_filter(&self) -> Option<String> {
+        self.filter.as_ref().map(|filter| filter.to_owned())
     }
 }
 

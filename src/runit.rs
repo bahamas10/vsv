@@ -73,7 +73,7 @@ impl RunitService {
     }
 }
 
-pub fn get_services(path: &path::Path, log: bool) -> Result<Vec<RunitService>> {
+pub fn get_services(path: &path::Path, log: bool, filter: Option<String>) -> Result<Vec<RunitService>> {
     // loop services directory and collect service names
     let mut dirs = Vec::new();
 
@@ -91,6 +91,12 @@ pub fn get_services(path: &path::Path, log: bool) -> Result<Vec<RunitService>> {
             .to_str()
             .ok_or_else(|| anyhow!("{:?}: failed to parse name from service", p))?
             .to_string();
+
+        if let Some(ref filter) = filter {
+            if !name.contains(filter) {
+                continue;
+            }
+        }
 
         let service = RunitService::new(p, &name);
         dirs.push(service);

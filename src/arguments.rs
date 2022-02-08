@@ -44,7 +44,10 @@ pub enum Commands {
         /// Tree view (calls pstree(1) on PIDs found)
         #[clap(short, long)]
         tree: bool,
+
+        filter: Vec<String>,
     },
+
     #[clap(external_subcommand)]
     External(Vec<String>),
 }

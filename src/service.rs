@@ -56,18 +56,17 @@ impl fmt::Display for ServiceState {
 }
 
 pub struct Service {
-    pub name: String,
-    pub state: ServiceState,
-    pub enabled: bool,
-    pub command: Option<String>,
-    pub pid: Option<pid_t>,
-    pub start_time: Option<time::SystemTime>,
-    pub pstree: Option<Result<String>>,
-    pub messages: Vec<String>,
+    name: String,
+    state: ServiceState,
+    enabled: bool,
+    command: Option<String>,
+    pid: Option<pid_t>,
+    start_time: Option<time::SystemTime>,
+    pstree: Option<Result<String>>,
 }
 
 impl Service {
-    pub fn from_runit_service(service: &RunitService, want_pstree: bool) -> Self {
+    pub fn from_runit_service(service: &RunitService, want_pstree: bool) -> (Self, Vec<String>) {
         let mut messages: Vec<String> = vec![];
         let name = service.name.to_string();
         let enabled = service.enabled();
@@ -111,7 +110,7 @@ impl Service {
             RunitServiceState::Unknown => ServiceState::Unknown,
         };
 
-        Self {
+        let svc = Self {
             name,
             state,
             enabled,
@@ -119,8 +118,9 @@ impl Service {
             pid,
             start_time,
             pstree,
-            messages,
-        }
+        };
+
+        (svc, messages)
     }
 
     fn format_name(&self) -> String {
@@ -154,7 +154,7 @@ impl Service {
     }
 
     fn format_time(&self) -> String {
-        match self.start_time {
+        match &self.start_time {
             Some(time) => {
                 match time.elapsed() {
                     Ok(t) => utils::relative_duration(t),
