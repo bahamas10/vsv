@@ -63,7 +63,6 @@ pub struct Service {
     pid: Option<pid_t>,
     start_time: Result<time::SystemTime>,
     pstree: Option<Result<String>>,
-    want_pstree: bool,
 }
 
 impl Service {
@@ -100,7 +99,7 @@ impl Service {
         // optionally get pstree.  None if the user wants it, Some if the user wants it regardless
         // of execution success.
         let pstree = if want_pstree {
-            pid.map(|pid| get_pstree(pid))
+            pid.map(get_pstree)
         } else {
             None
         };
@@ -120,7 +119,6 @@ impl Service {
             pid,
             start_time,
             pstree,
-            want_pstree,
         };
 
         (svc, messages)
@@ -168,9 +166,7 @@ impl Service {
         }
     }
 
-    fn format_pstree(&self) -> String {
-        assert!(&self.want_pstree);
-
+    pub fn format_pstree(&self) -> String {
         match &self.pstree {
             Some(tree) => {
                 let tree_s = match tree {
@@ -206,7 +202,7 @@ impl fmt::Display for Service {
 
         let time = (self.format_time(), &Style::default().dimmed());
 
-        let mut base = utils::format_status_line(
+        let base = utils::format_status_line(
             status_char,
             name,
             state,
@@ -214,12 +210,6 @@ impl fmt::Display for Service {
             pid,
             command,
             time);
-
-        // add pstree if applicable
-        if self.want_pstree {
-            let tree_s = self.format_pstree();
-            base = format!("{}\n{}", base, tree_s);
-        }
 
         base.fmt(f)
     }
