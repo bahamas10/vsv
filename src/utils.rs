@@ -6,6 +6,8 @@
  * License: MIT
  */
 
+//! Contains various util functions for vsv.
+
 use libc::{pid_t, c_int};
 use std::fs;
 use std::time;
@@ -138,6 +140,17 @@ pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
         suffix)
 }
 
+/// Check if the given file descriptor (by number) is a tty.
+///
+/// # Usage
+///
+/// Print "hello world" if stdout is a tty:
+///
+/// ```
+/// if isatty(1) {
+///     println!("hello world");
+/// }
+/// ```
 pub fn isatty(fd: c_int) -> bool {
     unsafe { libc::isatty(fd) != 0 }
 }
