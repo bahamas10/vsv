@@ -85,6 +85,15 @@ pub fn run_program_get_status<T: AsRef<str>>(cmd: T, args: &[T]) -> Result<ExitS
     Ok(p)
 }
 
+/// Create a `std::process::Command` from a given command name and argument slice.
+///
+/// # Example
+///
+/// ```
+/// let cmd = "echo";
+/// let args = ["hello", "world"];
+/// let c = make_command(cmd, &args);
+/// ```
 fn make_command<T: AsRef<str>>(cmd: T, args: &[T]) -> Command {
     let mut c = Command::new(cmd.as_ref());
 
@@ -95,6 +104,17 @@ fn make_command<T: AsRef<str>>(cmd: T, args: &[T]) -> Command {
     c
 }
 
+/// Convert a duration to a human-readable string like "5 minutes", "2 hours", etc.
+///
+/// # Example
+///
+/// Duration for 5 seconds ago:
+///
+/// ```
+/// use std::time::Duration;
+/// let dur = Duration::new(5, 0);
+/// assert_eq!(relative_duration(dur), "5 seconds".to_string());
+/// ```
 pub fn relative_duration(t: time::Duration) -> String {
     let secs = t.as_secs();
 
@@ -122,6 +142,23 @@ pub fn relative_duration(t: time::Duration) -> String {
     String::from("0 seconds")
 }
 
+/// Trim a string to be (at most) a certain number of characters with an optional suffix.
+///
+/// # Examples
+///
+/// Trim the string `"hello world"` to be (at most) 8 characters and add `"..."`:
+///
+/// ```
+/// let s = trim_long_string("hello world", 8, "...");
+/// assert_eq!(s, "hello...");
+/// ```
+///
+/// The suffix will only be added if the original string needed to be trimmed:
+///
+/// ```
+/// let s = trim_long_string("hello world", 100, "...");
+/// assert_eq!(s, "hello world");
+/// ```
 pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
     let suffix_len = suffix.len();
 
@@ -142,7 +179,7 @@ pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
 
 /// Check if the given file descriptor (by number) is a tty.
 ///
-/// # Usage
+/// # Example
 ///
 /// Print "hello world" if stdout is a tty:
 ///
