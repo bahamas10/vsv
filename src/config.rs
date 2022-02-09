@@ -1,14 +1,14 @@
 /*
- * Config context variable and various constants for vsv.
- *
- * The main idea here is that after CLI arguments are parsed, the args option
- * will be given to the config constructor via ::from_args(&args) and from that
- * + ENV variables a config object will be created.
- *
  * Author: Dave Eddy <dave@daveeddy.com>
  * Date: January 25, 2022
  * License: MIT
  */
+
+//! Config context variable and various constants for vsv.
+//!
+//! The main idea here is that after CLI arguments are parsed by `clap` the args
+//! object will be given to the config constructor via `::from_args(&args)` and
+//! from that + ENV variables a config object will be created.
 
 use std::env;
 use std::ffi::OsString;
@@ -98,14 +98,14 @@ impl Config {
     }
 }
 
-/*
- * Coloring output goes in order from highest priority to lowest priority -
- * highest priority (first in this list) wins:
- *
- * 1. CLI option (`-c`) given
- * 2. env NO_COLOR given
- * 3. stdout is a tty
- */
+/// Check if the output should be colorized.
+///
+/// Coloring output goes in order from highest priority to lowest priority
+/// -highest priority (first in this list) wins:
+///
+/// 1. CLI option (`-c`) given.
+/// 2. env `NO_COLOR` given.
+/// 3. stdout is a tty.
 fn should_colorize_output(color_arg: &Option<String>) -> Result<bool> {
     // check CLI option first
     if let Some(s) = color_arg {
@@ -128,13 +128,14 @@ fn should_colorize_output(color_arg: &Option<String>) -> Result<bool> {
     Ok(isatty)
 }
 
-/* Check svdir in this order:
- *
- * 1. CLI option (`-d`) given
- * 2. CLI option (`-u`) given
- * 3. env SVDIR given
- * 4. use DEFAULT_SVDIR
- */
+/// Determine the `SVDIR` the user wants.
+///
+/// Check svdir in this order:
+///
+/// 1. CLI option (`-d`) given
+/// 2. CLI option (`-u`) given
+/// 3. env `SVDIR` given
+/// 4. use `DEFAULT_SVDIR` (`"/var/service"`)
 fn get_svdir(
     dir_arg: &Option<path::PathBuf>,
     user_arg: bool,

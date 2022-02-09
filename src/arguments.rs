@@ -1,10 +1,10 @@
 /*
- * Parse command line arguments to vsv.
- *
  * Author: Dave Eddy <dave@daveeddy.com>
  * Date: January 25, 2022
  * License: MIT
  */
+
+//! Argument parsing logic (via `clap`) for vsv.
 
 use std::path;
 
