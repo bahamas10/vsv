@@ -1,18 +1,18 @@
 /*
  * Config context variable and various constants for vsv.
  *
- * The main idea here is that after CLI arguments are parsed, the args option will be given to the
- * config constructor via ::from_args(&args) and from that + ENV variables a config object will be
- * created.
+ * The main idea here is that after CLI arguments are parsed, the args option
+ * will be given to the config constructor via ::from_args(&args) and from that
+ * + ENV variables a config object will be created.
  *
  * Author: Dave Eddy <dave@daveeddy.com>
  * Date: January 25, 2022
  * License: MIT
  */
 
-use std::path;
 use std::env;
 use std::ffi::OsString;
+use std::path;
 
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
@@ -42,12 +42,10 @@ lazy_static! {
 
         path::PathBuf::from(&d)
     };
-
     pub static ref SV_PROG: String = {
         env::var(config::ENV_SV_PROG)
             .unwrap_or_else(|_| DEFAULT_SV_PROG.to_string())
     };
-
     pub static ref PSTREE_PROG: String = {
         env::var(config::ENV_PSTREE_PROG)
             .unwrap_or_else(|_| DEFAULT_PSTREE_PROG.to_string())
@@ -77,7 +75,8 @@ impl Config {
             tree: _tree,
             log: _log,
             filter: _filter,
-        }) = &args.command {
+        }) = &args.command
+        {
             if *_tree {
                 tree = true;
             }
@@ -89,14 +88,7 @@ impl Config {
             }
         };
 
-        let o = Self {
-            colorize,
-            svdir,
-            tree,
-            log,
-            verbose,
-            filter,
-        };
+        let o = Self { colorize, svdir, tree, log, verbose, filter };
 
         Ok(o)
     }
@@ -107,8 +99,8 @@ impl Config {
 }
 
 /*
- * Coloring output goes in order from highest priority to lowest priority - highest priority
- * (first in this list) wins:
+ * Coloring output goes in order from highest priority to lowest priority -
+ * highest priority (first in this list) wins:
  *
  * 1. CLI option (`-c`) given
  * 2. env NO_COLOR given
@@ -143,7 +135,10 @@ fn should_colorize_output(color_arg: &Option<String>) -> Result<bool> {
  * 3. env SVDIR given
  * 4. use DEFAULT_SVDIR
  */
-fn get_svdir(dir_arg: &Option<path::PathBuf>, user_arg: bool) -> Result<path::PathBuf> {
+fn get_svdir(
+    dir_arg: &Option<path::PathBuf>,
+    user_arg: bool,
+) -> Result<path::PathBuf> {
     // `-d <dir>`
     if let Some(dir) = dir_arg {
         return Ok(dir.to_path_buf());
@@ -151,15 +146,16 @@ fn get_svdir(dir_arg: &Option<path::PathBuf>, user_arg: bool) -> Result<path::Pa
 
     // `-u`
     if user_arg {
-        let home_dir = dirs::home_dir().ok_or_else(
-            || anyhow!("failed to determine users home directory"))?;
+        let home_dir = dirs::home_dir().ok_or_else(|| {
+            anyhow!("failed to determine users home directory")
+        })?;
         let buf = home_dir.join(DEFAULT_USER_DIR);
         return Ok(buf);
     }
 
     // env or default
     let svdir = env::var_os(config::ENV_SVDIR)
-        .unwrap_or_else(|| OsString::from(config::DEFAULT_SVDIR) );
+        .unwrap_or_else(|| OsString::from(config::DEFAULT_SVDIR));
     let buf = path::PathBuf::from(&svdir);
     Ok(buf)
 }

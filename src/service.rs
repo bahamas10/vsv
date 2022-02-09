@@ -12,17 +12,17 @@ use std::fmt;
 use std::time;
 
 use anyhow::Result;
-use yansi::{Style, Color};
+use yansi::{Color, Style};
 
+use crate::config;
 use crate::runit::{RunitService, RunitServiceState};
 use crate::utils;
-use crate::config;
 
 pub enum ServiceState {
     Run,
     Down,
     Finish,
-    Unknown
+    Unknown,
 }
 
 impl ServiceState {
@@ -75,7 +75,10 @@ pub struct Service {
 }
 
 impl Service {
-    pub fn from_runit_service(service: &RunitService, want_pstree: bool) -> (Self, Vec<String>) {
+    pub fn from_runit_service(
+        service: &RunitService,
+        want_pstree: bool,
+    ) -> (Self, Vec<String>) {
         let mut messages: Vec<String> = vec![];
         let name = service.name.to_string();
         let enabled = service.enabled();
@@ -92,7 +95,8 @@ impl Service {
                 Err(err) => {
                     messages.push(format!(
                         "{:?}: failed to get command for pid {}: {:?}",
-                        service.path, p, err));
+                        service.path, p, err
+                    ));
                 }
             };
         }
@@ -100,18 +104,17 @@ impl Service {
         let pid = match pid {
             Ok(pid) => Some(pid),
             Err(ref err) => {
-                messages.push(format!("{:?}: failed to get pid: {}", service.path, err));
+                messages.push(format!(
+                    "{:?}: failed to get pid: {}",
+                    service.path, err
+                ));
                 None
             }
         };
 
-        // optionally get pstree.  None if the user wants it, Some if the user wants it regardless
-        // of execution success.
-        let pstree = if want_pstree {
-            pid.map(get_pstree)
-        } else {
-            None
-        };
+	// optionally get pstree.  None if the user wants it, Some if the user
+	// wants it regardless of execution success.
+        let pstree = if want_pstree { pid.map(get_pstree) } else { None };
 
         let state = match state {
             RunitServiceState::Run => ServiceState::Run,
@@ -120,15 +123,8 @@ impl Service {
             RunitServiceState::Unknown => ServiceState::Unknown,
         };
 
-        let svc = Self {
-            name,
-            state,
-            enabled,
-            command,
-            pid,
-            start_time,
-            pstree,
-        };
+        let svc =
+            Self { name, state, enabled, command, pid, start_time, pstree };
 
         (svc, messages)
     }
@@ -165,13 +161,11 @@ impl Service {
 
     fn format_time(&self) -> String {
         match &self.start_time {
-            Ok(time) => {
-                match time.elapsed() {
-                    Ok(t) => utils::relative_duration(t),
-                    Err(err) => err.to_string(),
-                }
+            Ok(time) => match time.elapsed() {
+                Ok(t) => utils::relative_duration(t),
+                Err(err) => err.to_string(),
             },
-            Err(err) => err.to_string()
+            Err(err) => err.to_string(),
         }
     }
 
@@ -179,11 +173,15 @@ impl Service {
         match &self.pstree {
             Some(tree) => {
                 let tree_s = match tree {
-                    Ok(stdout) => Style::default().dimmed().paint(stdout.trim().to_string()),
-                    Err(err) => Color::Red.paint(format!("pstree call failed: {}", err)),
+                    Ok(stdout) => Style::default()
+                        .dimmed()
+                        .paint(stdout.trim().to_string()),
+                    Err(err) => {
+                        Color::Red.paint(format!("pstree call failed: {}", err))
+                    }
                 };
                 format!("\n{}\n", tree_s)
-            },
+            }
             None => "".into(),
         }
     }
@@ -207,7 +205,8 @@ impl fmt::Display for Service {
 
         let pid = (self.format_pid(), &Style::default().fg(Color::Magenta));
 
-        let command = (self.format_command(), &Style::default().fg(Color::Green));
+        let command =
+            (self.format_command(), &Style::default().fg(Color::Green));
 
         let time = (self.format_time(), &Style::default().dimmed());
 
@@ -218,7 +217,8 @@ impl fmt::Display for Service {
             enabled,
             pid,
             command,
-            time);
+            time,
+        );
 
         base.fmt(f)
     }
@@ -226,9 +226,6 @@ impl fmt::Display for Service {
 
 fn get_pstree(pid: pid_t) -> Result<String> {
     let cmd = config::PSTREE_PROG.to_owned();
-    let args = [
-        "-ac",
-        &pid.to_string(),
-    ];
+    let args = ["-ac", &pid.to_string()];
     utils::run_program_get_output(cmd.as_str(), &args)
 }

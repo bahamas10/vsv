@@ -10,22 +10,22 @@
 
 use std::env;
 
-use clap::crate_name;
-use yansi::{Color, Style, Paint};
 use anyhow::{anyhow, Context, Result};
+use clap::crate_name;
 use rayon::prelude::*;
+use yansi::{Color, Paint, Style};
 
 mod arguments;
 mod config;
 mod die;
 mod runit;
-mod utils;
 mod service;
+mod utils;
 
+use arguments::Commands;
+use config::Config;
 use die::die;
 use service::Service;
-use config::Config;
-use arguments::Commands;
 
 macro_rules! verbose {
     ($cfg:expr, $fmt:expr $(, $args:expr )* $(,)? ) => {
@@ -42,8 +42,7 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     let sv = config::SV_PROG.to_owned();
 
     if args.len() < 2 {
-        return Err(anyhow!("argument expected for '{} {}'",
-            sv, args[0]));
+        return Err(anyhow!("argument expected for '{} {}'", sv, args[0]));
     }
 
     // format arguments
@@ -52,9 +51,18 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     // set SVDIR env to match what user wanted
     env::set_var(config::ENV_SVDIR, &cfg.svdir);
 
-    println!("[{}] {}", crate_name!(), Color::Cyan.paint(format!(
-        "Running {} command ({}={:?} {} {})",
-        sv, config::ENV_SVDIR, &cfg.svdir, sv, &args_s)));
+    println!(
+        "[{}] {}",
+        crate_name!(),
+        Color::Cyan.paint(format!(
+            "Running {} command ({}={:?} {} {})",
+            sv,
+            config::ENV_SVDIR,
+            &cfg.svdir,
+            sv,
+            &args_s
+        ))
+    );
 
     // run the actual program
     let status = utils::run_program_get_status(sv.to_string(), args);
@@ -69,25 +77,29 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
             };
 
             // print exit code
-            println!("[{}] {}", crate_name!(), color.paint(format!(
-                "[{} {}] exit code {}",
-                sv, &args_s, code)));
+            println!(
+                "[{}] {}",
+                crate_name!(),
+                color.paint(format!("[{} {}] exit code {}", sv, &args_s, code))
+            );
 
             match code {
                 0 => Ok(()),
                 _ => Err(anyhow!("call to {} failed", sv)),
             }
-        },
-        Err(err) => Err(anyhow!("failed to execute {}: {}", sv, err))
+        }
+        Err(err) => Err(anyhow!("failed to execute {}: {}", sv, err)),
     }
 }
 
 fn do_status(cfg: &Config) -> Result<()> {
     // find all services
     let services = runit::get_services(&cfg.svdir, cfg.log, cfg.get_filter())
-        .with_context(|| format!("failed to list services in {:?}", cfg.svdir))?;
+        .with_context(|| {
+        format!("failed to list services in {:?}", cfg.svdir)
+    })?;
 
-    // process each service found (just gather data here, can be done in parallel)
+    // loop each service found (just gather data here, can be done in parallel)
     let services: Vec<(Service, Vec<String>)> = services
         .par_iter()
         .map(|service| Service::from_runit_service(service, cfg.tree))
@@ -98,15 +110,18 @@ fn do_status(cfg: &Config) -> Result<()> {
 
     println!();
     verbose!(cfg, "found {} services in {:?}", services.len(), cfg.svdir);
-    println!("{}", utils::format_status_line(
-        ("", &bold_style),
-        ("SERVICE", &bold_style),
-        ("STATE", &bold_style),
-        ("ENABLED", &bold_style),
-        ("PID", &bold_style),
-        ("COMMAND", &bold_style),
-        ("TIME", &bold_style),
-    ));
+    println!(
+        "{}",
+        utils::format_status_line(
+            ("", &bold_style),
+            ("SERVICE", &bold_style),
+            ("STATE", &bold_style),
+            ("ENABLED", &bold_style),
+            ("PID", &bold_style),
+            ("COMMAND", &bold_style),
+            ("TIME", &bold_style),
+        )
+    );
 
     // print each service found
     for (service, messages) in services {

@@ -8,10 +8,10 @@
 
 //! Contains various util functions for vsv.
 
-use libc::{pid_t, c_int};
+use libc::{c_int, pid_t};
 use std::fs;
-use std::time;
 use std::process::{Command, ExitStatus};
+use std::time;
 
 use anyhow::{anyhow, Context, Result};
 use yansi::Style;
@@ -25,17 +25,17 @@ pub fn format_status_line<T: AsRef<str>>(
     enabled: (T, &Style),
     pid: (T, &Style),
     command: (T, &Style),
-    time: (T, &Style)) -> String {
-
+    time: (T, &Style),
+) -> String {
     // ( data + style to print, max width, suffix )
     let data = [
-        (status_char, 1,  ""   ),
-        (name,        20, "..."),
-        (state,       7,  "..."),
-        (enabled,     9,  "..."),
-        (pid,         8,  "..."),
-        (command,     17, "..."),
-        (time,        99, "..."),
+        (status_char, 1, ""),
+        (name, 20, "..."),
+        (state, 7, "..."),
+        (enabled, 9, "..."),
+        (pid, 8, "..."),
+        (command, 17, "..."),
+        (time, 99, "..."),
     ];
 
     let mut line = String::new();
@@ -67,11 +67,17 @@ pub fn cmd_from_pid(pid: pid_t) -> Result<String> {
     }
 }
 
-pub fn run_program_get_output<T: AsRef<str>>(cmd: T, args: &[T]) -> Result<String> {
+pub fn run_program_get_output<T: AsRef<str>>(
+    cmd: T,
+    args: &[T],
+) -> Result<String> {
     let output = make_command(cmd, args).output()?;
 
-    if ! output.status.success() {
-        return Err(anyhow!("program '{:?}' returned non-zero", args[0].as_ref()));
+    if !output.status.success() {
+        return Err(anyhow!(
+            "program '{:?}' returned non-zero",
+            args[0].as_ref()
+        ));
     }
 
     let stdout = String::from_utf8(output.stdout)?;
@@ -79,13 +85,17 @@ pub fn run_program_get_output<T: AsRef<str>>(cmd: T, args: &[T]) -> Result<Strin
     Ok(stdout)
 }
 
-pub fn run_program_get_status<T: AsRef<str>>(cmd: T, args: &[T]) -> Result<ExitStatus> {
+pub fn run_program_get_status<T: AsRef<str>>(
+    cmd: T,
+    args: &[T],
+) -> Result<ExitStatus> {
     let p = make_command(cmd, args).status()?;
 
     Ok(p)
 }
 
-/// Create a `std::process::Command` from a given command name and argument slice.
+/// Create a `std::process::Command` from a given command name and argument
+/// slice.
 ///
 /// # Example
 ///
@@ -104,7 +114,8 @@ fn make_command<T: AsRef<str>>(cmd: T, args: &[T]) -> Command {
     c
 }
 
-/// Convert a duration to a human-readable string like "5 minutes", "2 hours", etc.
+/// Convert a duration to a human-readable string like "5 minutes", "2 hours",
+/// etc.
 ///
 /// # Example
 ///
@@ -118,14 +129,14 @@ fn make_command<T: AsRef<str>>(cmd: T, args: &[T]) -> Command {
 pub fn relative_duration(t: time::Duration) -> String {
     let secs = t.as_secs();
 
-    let v = vec![
+    let v = [
         (secs / 60 / 60 / 24 / 365, "year"),
-        (secs / 60 / 60 / 24 / 30 , "month"),
-        (secs / 60 / 60 / 24 / 7  , "week"),
-        (secs / 60 / 60 / 24      , "day"),
-        (secs / 60 / 60           , "hour"),
-        (secs / 60                , "minute"),
-        (secs                     , "second"),
+        (secs / 60 / 60 / 24 / 30, "month"),
+        (secs / 60 / 60 / 24 / 7, "week"),
+        (secs / 60 / 60 / 24, "day"),
+        (secs / 60 / 60, "hour"),
+        (secs / 60, "minute"),
+        (secs, "second"),
     ];
 
     let mut plural = "";
@@ -142,11 +153,13 @@ pub fn relative_duration(t: time::Duration) -> String {
     String::from("0 seconds")
 }
 
-/// Trim a string to be (at most) a certain number of characters with an optional suffix.
+/// Trim a string to be (at most) a certain number of characters with an
+/// optional suffix.
 ///
 /// # Examples
 ///
-/// Trim the string `"hello world"` to be (at most) 8 characters and add `"..."`:
+/// Trim the string `"hello world"` to be (at most) 8 characters and add
+/// `"..."`:
 ///
 /// ```
 /// let s = trim_long_string("hello world", 8, "...");
@@ -172,9 +185,11 @@ pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
     }
 
     // make new string (without formatting)
-    format!("{}{}",
+    format!(
+        "{}{}",
         s.chars().take(limit - suffix_len).collect::<String>(),
-        suffix)
+        suffix
+    )
 }
 
 /// Check if the given file descriptor (by number) is a tty.

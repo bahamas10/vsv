@@ -17,7 +17,7 @@ pub enum RunitServiceState {
     Run,
     Down,
     Finish,
-    Unknown
+    Unknown,
 }
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -29,17 +29,14 @@ pub struct RunitService {
 impl RunitService {
     pub fn new(path: path::PathBuf, name: &str) -> Self {
         let name = name.to_string();
-        Self {
-            path,
-            name,
-        }
+        Self { path, name }
     }
 
     pub fn enabled(&self) -> bool {
         // "/<svdir>/<service>/down"
         let p = self.path.join("down");
 
-        ! p.exists()
+        !p.exists()
     }
 
     pub fn get_pid(&self) -> Result<pid_t> {
@@ -55,7 +52,8 @@ impl RunitService {
         // "/<svdir>/<service>/supervise/stat"
         let p = self.path.join("supervise").join("stat");
 
-        let s = fs::read_to_string(p).unwrap_or_else(|_| String::from("unknown"));
+        let s =
+            fs::read_to_string(p).unwrap_or_else(|_| String::from("unknown"));
 
         match s.trim() {
             "run" => RunitServiceState::Run,
@@ -73,7 +71,11 @@ impl RunitService {
     }
 }
 
-pub fn get_services(path: &path::Path, log: bool, filter: Option<String>) -> Result<Vec<RunitService>> {
+pub fn get_services(
+    path: &path::Path,
+    log: bool,
+    filter: Option<String>,
+) -> Result<Vec<RunitService>> {
     // loop services directory and collect service names
     let mut dirs = Vec::new();
 
@@ -81,7 +83,7 @@ pub fn get_services(path: &path::Path, log: bool, filter: Option<String>) -> Res
         let entry = entry?;
         let p = entry.path();
 
-        if ! p.is_dir() {
+        if !p.is_dir() {
             continue;
         }
 
@@ -89,7 +91,9 @@ pub fn get_services(path: &path::Path, log: bool, filter: Option<String>) -> Res
             .file_name()
             .ok_or_else(|| anyhow!("{:?}: failed to get name from service", p))?
             .to_str()
-            .ok_or_else(|| anyhow!("{:?}: failed to parse name from service", p))?
+            .ok_or_else(|| {
+                anyhow!("{:?}: failed to parse name from service", p)
+            })?
             .to_string();
 
         if let Some(ref filter) = filter {
