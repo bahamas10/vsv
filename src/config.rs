@@ -1,3 +1,15 @@
+/*
+ * Config context variable and various constants for vsv.
+ *
+ * The main idea here is that after CLI arguments are parsed, the args option will be given to the
+ * config constructor via ::from_args(&args) and from that + ENV variables a config object will be
+ * created.
+ *
+ * Author: Dave Eddy <dave@daveeddy.com>
+ * Date: January 25, 2022
+ * License: MIT
+ */
+
 use std::path;
 use std::env;
 use std::ffi::OsString;

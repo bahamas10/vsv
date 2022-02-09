@@ -1,3 +1,12 @@
+/*
+ * A type that defines a generic Service.  This struct itself doesn't do much - it just stores
+ * information about a service and knows how to format it to look pretty.
+ *
+ * Author: Dave Eddy <dave@daveeddy.com>
+ * Date: January 26, 2022
+ * License: MIT
+ */
+
 use libc::pid_t;
 use std::fmt;
 use std::time;

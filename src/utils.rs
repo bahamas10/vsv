@@ -1,3 +1,11 @@
+/*
+ * Various util functions.
+ *
+ * Author: Dave Eddy <dave@daveeddy.com>
+ * Date: January 26, 2022
+ * License: MIT
+ */
+
 use libc::{pid_t, c_int};
 use std::fs;
 use std::time;

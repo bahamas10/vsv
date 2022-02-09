@@ -1,3 +1,11 @@
+/*
+ * Parse command line arguments to vsv.
+ *
+ * Author: Dave Eddy <dave@daveeddy.com>
+ * Date: January 25, 2022
+ * License: MIT
+ */
+
 use std::path;
 
 use clap::{Parser, Subcommand};
