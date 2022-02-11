@@ -67,17 +67,15 @@ pub fn cmd_from_pid(pid: pid_t) -> Result<String> {
     }
 }
 
-pub fn run_program_get_output<T: AsRef<str>>(
-    cmd: T,
-    args: &[T],
-) -> Result<String> {
+pub fn run_program_get_output<T1, T2>(cmd: &T1, args: &[T2]) -> Result<String>
+where
+    T1: AsRef<str>,
+    T2: AsRef<str>,
+{
     let output = make_command(cmd, args).output()?;
 
     if !output.status.success() {
-        return Err(anyhow!(
-            "program '{:?}' returned non-zero",
-            args[0].as_ref()
-        ));
+        return Err(anyhow!("program '{}' returned non-zero", cmd.as_ref()));
     }
 
     let stdout = String::from_utf8(output.stdout)?;
@@ -85,10 +83,14 @@ pub fn run_program_get_output<T: AsRef<str>>(
     Ok(stdout)
 }
 
-pub fn run_program_get_status<T: AsRef<str>>(
-    cmd: T,
-    args: &[T],
-) -> Result<ExitStatus> {
+pub fn run_program_get_status<T1, T2>(
+    cmd: &T1,
+    args: &[T2],
+) -> Result<ExitStatus>
+where
+    T1: AsRef<str>,
+    T2: AsRef<str>,
+{
     let p = make_command(cmd, args).status()?;
 
     Ok(p)
@@ -102,9 +104,13 @@ pub fn run_program_get_status<T: AsRef<str>>(
 /// ```
 /// let cmd = "echo";
 /// let args = ["hello", "world"];
-/// let c = make_command(cmd, &args);
+/// let c = make_command(&cmd, &args);
 /// ```
-fn make_command<T: AsRef<str>>(cmd: T, args: &[T]) -> Command {
+fn make_command<T1, T2>(cmd: &T1, args: &[T2]) -> Command
+where
+    T1: AsRef<str>,
+    T2: AsRef<str>,
+{
     let mut c = Command::new(cmd.as_ref());
 
     for arg in args {
@@ -205,4 +211,39 @@ pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
 /// ```
 pub fn isatty(fd: c_int) -> bool {
     unsafe { libc::isatty(fd) != 0 }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_run_program_get_output_good_program_exit_success() -> Result<()> {
+        let cmd = "echo";
+        let args = ["hello", "world"];
+        let out = run_program_get_output(&cmd, &args)?;
+        assert_eq!(out, "hello world\n");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_run_program_get_output_good_program_exit_failure() -> Result<()> {
+        let cmd = "false";
+        let args: [&str; 0] = [];
+        let out = run_program_get_output(&cmd, &args);
+        assert!(out.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_run_program_get_output_bad_program() -> Result<()> {
+        let cmd = "this-command-should-never-exist---seriously";
+        let args: [&str; 0] = [];
+        let out = run_program_get_output(&cmd, &args);
+        assert!(out.is_err());
+
+        Ok(())
+    }
 }

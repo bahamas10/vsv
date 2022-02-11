@@ -65,7 +65,7 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     );
 
     // run the actual program
-    let status = utils::run_program_get_status(sv.to_string(), args);
+    let status = utils::run_program_get_status(&sv, args);
 
     // check the process status
     match status {

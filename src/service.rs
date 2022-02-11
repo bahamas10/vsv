@@ -112,8 +112,8 @@ impl Service {
             }
         };
 
-	// optionally get pstree.  None if the user wants it, Some if the user
-	// wants it regardless of execution success.
+        // optionally get pstree.  None if the user wants it, Some if the user
+        // wants it regardless of execution success.
         let pstree = if want_pstree { pid.map(get_pstree) } else { None };
 
         let state = match state {
@@ -226,6 +226,6 @@ impl fmt::Display for Service {
 
 fn get_pstree(pid: pid_t) -> Result<String> {
     let cmd = config::PSTREE_PROG.to_owned();
-    let args = ["-ac", &pid.to_string()];
-    utils::run_program_get_output(cmd.as_str(), &args)
+    let args = ["-ac".to_string(), pid.to_string()];
+    utils::run_program_get_output(&cmd, &args)
 }
