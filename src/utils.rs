@@ -246,4 +246,29 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_isatty_bad_fd() {
+        let b = isatty(-1);
+        assert_eq!(b, false);
+    }
+
+    #[test]
+    fn test_relative_durations() {
+        use std::time::Duration;
+
+        let arr = [
+            (5, "5 seconds"),
+            (5 * 60, "5 minutes"),
+            (5 * 60 * 60, "5 hours"),
+            (5 * 60 * 60 * 24, "5 days"),
+            (5 * 60 * 60 * 24 * 30, "5 months"),
+            (5 * 60 * 60 * 24 * 365, "5 years"),
+        ];
+
+        for (secs, s) in arr {
+            let dur = Duration::new(secs, 0);
+            assert_eq!(relative_duration(dur), s);
+        }
+    }
 }
