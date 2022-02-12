@@ -9,6 +9,7 @@
 
 use libc::pid_t;
 use std::fmt;
+use std::path::PathBuf;
 use std::time;
 
 use anyhow::Result;
@@ -78,6 +79,7 @@ impl Service {
     pub fn from_runit_service(
         service: &RunitService,
         want_pstree: bool,
+        proc_path: &PathBuf,
     ) -> (Self, Vec<String>) {
         let mut messages: Vec<String> = vec![];
         let name = service.name.to_string();
@@ -88,7 +90,7 @@ impl Service {
 
         let mut command = None;
         if let Ok(p) = pid {
-            match utils::cmd_from_pid(p) {
+            match utils::cmd_from_pid(p, proc_path) {
                 Ok(cmd) => {
                     command = Some(cmd);
                 }

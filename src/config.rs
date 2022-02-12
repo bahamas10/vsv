@@ -36,12 +36,6 @@ pub const ENV_SV_PROG: &str = "SV_PROG";
 pub const ENV_PSTREE_PROG: &str = "PSTREE_PROG";
 
 lazy_static! {
-    pub static ref PROC_PATH: path::PathBuf = {
-        let d = env::var_os(config::ENV_PROC_DIR)
-            .unwrap_or_else(|| OsString::from(DEFAULT_PROC_DIR));
-
-        path::PathBuf::from(&d)
-    };
     pub static ref SV_PROG: String = {
         env::var(config::ENV_SV_PROG)
             .unwrap_or_else(|_| DEFAULT_SV_PROG.to_string())
@@ -54,8 +48,14 @@ lazy_static! {
 
 #[derive(Debug)]
 pub struct Config {
+    // env vars only
+    pub proc_path: path::PathBuf,
+
+    // env vars or CLI options
     pub colorize: bool,
     pub svdir: path::PathBuf,
+
+    // CLI options only
     pub tree: bool,
     pub log: bool,
     pub verbose: usize,
@@ -67,9 +67,14 @@ impl Config {
         let mut tree = args.tree;
         let mut log = args.log;
         let mut filter = None;
-        let verbose = args.verbose;
+
+        let proc_path: path::PathBuf = env::var_os(config::ENV_PROC_DIR)
+            .unwrap_or_else(|| OsString::from(DEFAULT_PROC_DIR))
+            .into();
+
         let colorize = should_colorize_output(&args.color)?;
         let svdir = get_svdir(&args.dir, args.user)?;
+        let verbose = args.verbose;
 
         if let Some(Commands::Status {
             tree: _tree,
@@ -88,7 +93,7 @@ impl Config {
             }
         };
 
-        let o = Self { colorize, svdir, tree, log, verbose, filter };
+        let o = Self { proc_path, colorize, svdir, tree, log, verbose, filter };
 
         Ok(o)
     }

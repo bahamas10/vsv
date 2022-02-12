@@ -102,7 +102,9 @@ fn do_status(cfg: &Config) -> Result<()> {
     // loop each service found (just gather data here, can be done in parallel)
     let services: Vec<(Service, Vec<String>)> = services
         .par_iter()
-        .map(|service| Service::from_runit_service(service, cfg.tree))
+        .map(|service| {
+            Service::from_runit_service(service, cfg.tree, &cfg.proc_path)
+        })
         .collect();
 
     // print gathared data
