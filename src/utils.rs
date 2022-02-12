@@ -17,6 +17,25 @@ use std::time;
 use anyhow::{anyhow, Context, Result};
 use yansi::Style;
 
+/// Format a status line - made specifically for vsv.
+///
+/// # Example
+/// ```
+/// use yansi::Style;
+/// let bold_style = Style::default().bold();
+/// println!(
+///     "{}",
+///     format_status_line(
+///         ("", &bold_style),
+///         ("SERVICE", &bold_style),
+///         ("STATE", &bold_style),
+///         ("ENABLED", &bold_style),
+///         ("PID", &bold_style),
+///         ("COMMAND", &bold_style),
+///         ("TIME", &bold_style),
+///     )
+/// );
+/// ```
 pub fn format_status_line<T: AsRef<str>>(
     status_char: (T, &Style),
     name: (T, &Style),
@@ -51,6 +70,18 @@ pub fn format_status_line<T: AsRef<str>>(
     line
 }
 
+/// Get the program name (arg0) for a PID.
+///
+/// # Example
+///
+/// ```
+/// use std::path::PathBuf;
+///
+/// let pid = 1;
+/// let proc_path = PathBuf::from("/proc");
+/// let cmd = cmd_from_pid(pid, &proc_path)?;
+/// println!("pid {} program is {}", pid, cmd);
+/// ```
 pub fn cmd_from_pid(pid: pid_t, proc_path: &PathBuf) -> Result<String> {
     // /<proc_path>/<pid>/cmdline
     let p = proc_path.join(pid.to_string()).join("cmdline");
