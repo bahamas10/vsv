@@ -164,7 +164,7 @@ impl Service {
     fn format_time(&self) -> String {
         match &self.start_time {
             Ok(time) => match time.elapsed() {
-                Ok(t) => utils::relative_duration(t),
+                Ok(t) => utils::relative_duration(&t),
                 Err(err) => err.to_string(),
             },
             Err(err) => err.to_string(),

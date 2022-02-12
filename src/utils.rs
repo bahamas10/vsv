@@ -12,7 +12,7 @@ use libc::{c_int, pid_t};
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus};
-use std::time;
+use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
 use yansi::Style;
@@ -184,9 +184,9 @@ where
 /// ```
 /// use std::time::Duration;
 /// let dur = Duration::new(5, 0);
-/// assert_eq!(relative_duration(dur), "5 seconds".to_string());
+/// assert_eq!(relative_duration(&dur), "5 seconds".to_string());
 /// ```
-pub fn relative_duration(t: time::Duration) -> String {
+pub fn relative_duration(t: &Duration) -> String {
     let secs = t.as_secs();
 
     let v = [
@@ -364,7 +364,7 @@ mod tests {
 
         for (secs, s) in arr {
             let dur = Duration::new(secs, 0);
-            assert_eq!(relative_duration(dur), s, "duration mismatch");
+            assert_eq!(relative_duration(&dur), s, "duration mismatch");
         }
     }
 }
