@@ -10,7 +10,7 @@
 
 use libc::{c_int, pid_t};
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 use std::process::{Command, ExitStatus};
 use std::time::Duration;
 
@@ -82,7 +82,7 @@ pub fn format_status_line<T: AsRef<str>>(
 /// let cmd = cmd_from_pid(pid, &proc_path)?;
 /// println!("pid {} program is {}", pid, cmd);
 /// ```
-pub fn cmd_from_pid(pid: pid_t, proc_path: &PathBuf) -> Result<String> {
+pub fn cmd_from_pid(pid: pid_t, proc_path: &Path) -> Result<String> {
     // /<proc_path>/<pid>/cmdline
     let p = proc_path.join(pid.to_string()).join("cmdline");
 

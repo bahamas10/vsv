@@ -9,7 +9,7 @@
 
 use libc::pid_t;
 use std::fmt;
-use std::path::PathBuf;
+use std::path::Path;
 use std::time;
 
 use anyhow::Result;
@@ -79,7 +79,7 @@ impl Service {
     pub fn from_runit_service(
         service: &RunitService,
         want_pstree: bool,
-        proc_path: &PathBuf,
+        proc_path: &Path,
     ) -> (Self, Vec<String>) {
         let mut messages: Vec<String> = vec![];
         let name = service.name.to_string();
