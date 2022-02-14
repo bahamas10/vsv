@@ -14,7 +14,6 @@ use std::time;
 use anyhow::Result;
 use yansi::{Color, Style};
 
-use crate::config;
 use crate::runit::{RunitService, RunitServiceState};
 use crate::utils;
 
@@ -87,6 +86,7 @@ impl Service {
         service: &RunitService,
         want_pstree: bool,
         proc_path: &Path,
+        pstree_prog: &str,
     ) -> (Self, Vec<String>) {
         let mut messages: Vec<String> = vec![];
         let name = service.name.to_string();
@@ -123,7 +123,11 @@ impl Service {
 
         // optionally get pstree.  None if the user wants it, Some if the user
         // wants it regardless of execution success.
-        let pstree = if want_pstree { pid.map(get_pstree) } else { None };
+        let pstree = if want_pstree {
+            pid.map(|pid| get_pstree(pid, pstree_prog))
+        } else {
+            None
+        };
 
         let state = match state {
             RunitServiceState::Run => ServiceState::Run,
@@ -243,8 +247,8 @@ impl fmt::Display for Service {
 }
 
 /// Get the `pstree` for a given pid.
-fn get_pstree(pid: pid_t) -> Result<String> {
-    let cmd = config::PSTREE_PROG.to_owned();
+fn get_pstree(pid: pid_t, pstree_prog: &str) -> Result<String> {
+    let cmd = pstree_prog.to_string();
     let args = ["-ac".to_string(), pid.to_string()];
     utils::run_program_get_output(&cmd, &args)
 }

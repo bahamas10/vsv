@@ -1,8 +1,4 @@
 /*
- * A rust replacement for vsv
- *
- * Original: https://github.com/bahamas10/vsv
- *
  * Author: Dave Eddy <dave@daveeddy.com>
  * Date: January 25, 2022
  * License: MIT
@@ -45,7 +41,7 @@ macro_rules! verbose {
 fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     assert!(!args.is_empty());
 
-    let sv = config::SV_PROG.to_owned();
+    let sv = cfg.sv_prog.to_owned();
 
     if args.len() < 2 {
         return Err(anyhow!("argument expected for '{} {}'", sv, args[0]));
@@ -110,7 +106,12 @@ fn do_status(cfg: &Config) -> Result<()> {
     let services: Vec<(Service, Vec<String>)> = services
         .par_iter()
         .map(|service| {
-            Service::from_runit_service(service, cfg.tree, &cfg.proc_path)
+            Service::from_runit_service(
+                service,
+                cfg.tree,
+                &cfg.proc_path,
+                &cfg.pstree_prog,
+            )
         })
         .collect();
 

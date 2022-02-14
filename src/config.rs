@@ -15,7 +15,6 @@ use std::ffi::OsString;
 use std::path;
 
 use anyhow::{anyhow, Result};
-use lazy_static::lazy_static;
 
 use crate::arguments::{Args, Commands};
 use crate::config;
@@ -53,17 +52,6 @@ pub const ENV_SV_PROG: &str = "SV_PROG";
 /// Env var name for `PSTREE_PROG`
 pub const ENV_PSTREE_PROG: &str = "PSTREE_PROG";
 
-lazy_static! {
-    pub static ref SV_PROG: String = {
-        env::var(config::ENV_SV_PROG)
-            .unwrap_or_else(|_| DEFAULT_SV_PROG.to_string())
-    };
-    pub static ref PSTREE_PROG: String = {
-        env::var(config::ENV_PSTREE_PROG)
-            .unwrap_or_else(|_| DEFAULT_PSTREE_PROG.to_string())
-    };
-}
-
 /// Configuration options derived from the environment and CLI arguments.
 ///
 /// This struct holds all configuration data for the invocation of `vsv` derived
@@ -73,6 +61,8 @@ lazy_static! {
 pub struct Config {
     // env vars only
     pub proc_path: path::PathBuf,
+    pub sv_prog: String,
+    pub pstree_prog: String,
 
     // env vars or CLI options
     pub colorize: bool,
@@ -95,11 +85,16 @@ impl Config {
         let proc_path: path::PathBuf = env::var_os(config::ENV_PROC_DIR)
             .unwrap_or_else(|| OsString::from(DEFAULT_PROC_DIR))
             .into();
+        let sv_prog = env::var(config::ENV_SV_PROG)
+            .unwrap_or_else(|_| DEFAULT_SV_PROG.to_string());
+        let pstree_prog = env::var(config::ENV_PSTREE_PROG)
+            .unwrap_or_else(|_| DEFAULT_PSTREE_PROG.to_string());
 
         let colorize = should_colorize_output(&args.color)?;
         let svdir = get_svdir(&args.dir, args.user)?;
         let verbose = args.verbose;
 
+        // let arguments after `vsv status` work as well.
         if let Some(Commands::Status {
             tree: _tree,
             log: _log,
@@ -117,7 +112,17 @@ impl Config {
             }
         };
 
-        let o = Self { proc_path, colorize, svdir, tree, log, verbose, filter };
+        let o = Self {
+            proc_path,
+            sv_prog,
+            pstree_prog,
+            colorize,
+            svdir,
+            tree,
+            log,
+            verbose,
+            filter,
+        };
 
         Ok(o)
     }

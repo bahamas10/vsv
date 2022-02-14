@@ -1,6 +1,4 @@
 /*
- * A simple macro to kill a process with a specified exit code.
- *
  * Author: Dave Eddy <dave@daveeddy.com>
  * Date: January 26, 2022
  * License: MIT

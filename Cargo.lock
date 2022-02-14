@@ -368,7 +368,6 @@ dependencies = [
  "anyhow",
  "clap",
  "dirs",
- "lazy_static",
  "libc",
  "rayon",
  "yansi",
