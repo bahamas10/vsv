@@ -7,10 +7,10 @@
 //! Runit service related structs and enums.
 
 use libc::pid_t;
+use path::{Path, PathBuf};
 use std::fs;
 use std::path;
 use std::time;
-use path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 
@@ -110,11 +110,9 @@ pub fn get_services(
 
         let name = p
             .file_name()
-            .ok_or_else(|| anyhow!("{:?}: failed to get name from service", p))?
+            .ok_or_else(|| anyhow!("{:?}: failed to get service name", p))?
             .to_str()
-            .ok_or_else(|| {
-                anyhow!("{:?}: failed to parse name from service", p)
-            })?
+            .ok_or_else(|| anyhow!("{:?}: failed to parse service name", p))?
             .to_string();
 
         if let Some(ref filter) = filter {

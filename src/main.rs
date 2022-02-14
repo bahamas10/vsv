@@ -8,6 +8,10 @@
  * License: MIT
  */
 
+//! A rust port of `vsv`
+//!
+//! Original: <https://github.com/bahamas10/vsv>
+
 use std::env;
 
 use anyhow::{anyhow, Context, Result};
@@ -27,6 +31,7 @@ use config::Config;
 use die::die;
 use service::Service;
 
+/// A `println!()`-like macro that will only print if `-v` is set.
 macro_rules! verbose {
     ($cfg:expr, $fmt:expr $(, $args:expr )* $(,)? ) => {
         if $cfg.verbose > 0 {
@@ -36,6 +41,7 @@ macro_rules! verbose {
     };
 }
 
+/// Handle `vsv <any-non-matching-command>`.
 fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     assert!(!args.is_empty());
 
@@ -92,6 +98,7 @@ fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     }
 }
 
+/// Handle `vsv status` or `vsv` without a subcommand given.
 fn do_status(cfg: &Config) -> Result<()> {
     // find all services
     let services = runit::get_services(&cfg.svdir, cfg.log, cfg.get_filter())
@@ -148,6 +155,7 @@ fn do_status(cfg: &Config) -> Result<()> {
     Ok(())
 }
 
+/// Main wrapped to return a result.
 fn do_main() -> Result<()> {
     // disable color until we absolutely know we want it
     Paint::disable();

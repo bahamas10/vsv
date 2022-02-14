@@ -1,11 +1,10 @@
 /*
- * A type that defines a generic Service.  This struct itself doesn't do much - it just stores
- * information about a service and knows how to format it to look pretty.
- *
  * Author: Dave Eddy <dave@daveeddy.com>
  * Date: January 26, 2022
  * License: MIT
  */
+
+//! Generic service related structs and enums.
 
 use libc::pid_t;
 use std::fmt;
@@ -19,6 +18,7 @@ use crate::config;
 use crate::runit::{RunitService, RunitServiceState};
 use crate::utils;
 
+/// Possible states for a service.
 pub enum ServiceState {
     Run,
     Down,
@@ -27,6 +27,7 @@ pub enum ServiceState {
 }
 
 impl ServiceState {
+    /// Get a suitable `yansi::Style` for the state.
     pub fn get_style(&self) -> Style {
         let style = Style::default();
 
@@ -40,6 +41,7 @@ impl ServiceState {
         style.fg(color)
     }
 
+    /// Get a suitable char for the state (as a `String`).
     pub fn get_char(&self) -> String {
         let s = match self {
             ServiceState::Run => "✔",
@@ -65,6 +67,10 @@ impl fmt::Display for ServiceState {
     }
 }
 
+/// A struct suitable for describing an abstract service.
+///
+/// This struct itself doesn't do much - it just stores information about a
+/// service and knows how to format it to look pretty.
 pub struct Service {
     name: String,
     state: ServiceState,
@@ -76,6 +82,7 @@ pub struct Service {
 }
 
 impl Service {
+    /// Create a new service from a `RunitService`.
     pub fn from_runit_service(
         service: &RunitService,
         want_pstree: bool,
@@ -131,22 +138,27 @@ impl Service {
         (svc, messages)
     }
 
+    /// Format the service name as a string.
     fn format_name(&self) -> String {
         self.name.to_string()
     }
 
+    /// Format the service char as a string.
     fn format_status_char(&self) -> String {
         self.state.get_char()
     }
 
+    /// Format the service state as a string.
     fn format_state(&self) -> String {
         self.state.to_string()
     }
 
+    /// Format the service enabled status as a string.
     fn format_enabled(&self) -> String {
         self.enabled.to_string()
     }
 
+    /// Format the service pid as a string.
     fn format_pid(&self) -> String {
         match self.pid {
             Some(pid) => pid.to_string(),
@@ -154,6 +166,7 @@ impl Service {
         }
     }
 
+    /// Format the service command a string.
     fn format_command(&self) -> String {
         match &self.command {
             Some(cmd) => cmd.clone(),
@@ -161,6 +174,7 @@ impl Service {
         }
     }
 
+    /// Format the service time as a string.
     fn format_time(&self) -> String {
         match &self.start_time {
             Ok(time) => match time.elapsed() {
@@ -171,6 +185,7 @@ impl Service {
         }
     }
 
+    /// Format the service `pstree` output as a string.
     pub fn format_pstree(&self) -> String {
         match &self.pstree {
             Some(tree) => {
@@ -190,6 +205,7 @@ impl Service {
 }
 
 impl fmt::Display for Service {
+    /// Format the service as a string suitable for output by `vsv`.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let state_style = self.state.get_style();
 
@@ -226,6 +242,7 @@ impl fmt::Display for Service {
     }
 }
 
+/// Get the `pstree` for a given pid.
 fn get_pstree(pid: pid_t) -> Result<String> {
     let cmd = config::PSTREE_PROG.to_owned();
     let args = ["-ac".to_string(), pid.to_string()];

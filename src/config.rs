@@ -22,17 +22,35 @@ use crate::config;
 use crate::utils;
 
 // default values
+/// Default Runit service dir.
 pub const DEFAULT_SVDIR: &str = "/var/service";
-pub const DEFAULT_PROC_DIR: &str = "/proc";
-pub const DEFAULT_SV_PROG: &str = "sv";
-pub const DEFAULT_PSTREE_PROG: &str = "pstree";
-pub const DEFAULT_USER_DIR: &str = "runit/service"; // relative to home dir
 
-// env variables used by this program
+/// Default Linux proc fs dir.
+pub const DEFAULT_PROC_DIR: &str = "/proc";
+
+/// Default `sv` command name.
+pub const DEFAULT_SV_PROG: &str = "sv";
+
+/// Default `pstree` command name.
+pub const DEFAULT_PSTREE_PROG: &str = "pstree";
+
+/// Default Runit user dir (relative to user's home directory).
+pub const DEFAULT_USER_DIR: &str = "runit/service";
+
+// env var name
+/// Env var name for `NO_COLOR`
 pub const ENV_NO_COLOR: &str = "NO_COLOR";
+
+/// Env var name for `SVDIR`
 pub const ENV_SVDIR: &str = "SVDIR";
+
+/// Env var name for `PROC_DIR`
 pub const ENV_PROC_DIR: &str = "PROC_DIR";
+
+/// Env var name for `SV_PROG`
 pub const ENV_SV_PROG: &str = "SV_PROG";
+
+/// Env var name for `PSTREE_PROG`
 pub const ENV_PSTREE_PROG: &str = "PSTREE_PROG";
 
 lazy_static! {
@@ -46,6 +64,11 @@ lazy_static! {
     };
 }
 
+/// Configuration options derived from the environment and CLI arguments.
+///
+/// This struct holds all configuration data for the invocation of `vsv` derived
+/// from both env variables and CLI arguments.  This object can be passed around
+/// and thought of as a "context" variable.
 #[derive(Debug)]
 pub struct Config {
     // env vars only
@@ -63,6 +86,7 @@ pub struct Config {
 }
 
 impl Config {
+    /// Create a `Config` struct from a clap `Args` struct.
     pub fn from_args(args: &Args) -> Result<Self> {
         let mut tree = args.tree;
         let mut log = args.log;
@@ -98,6 +122,7 @@ impl Config {
         Ok(o)
     }
 
+    /// Get a copy of the optional `filter` option.
     pub fn get_filter(&self) -> Option<String> {
         self.filter.as_ref().map(|filter| filter.to_owned())
     }

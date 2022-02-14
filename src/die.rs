@@ -6,7 +6,7 @@
  * License: MIT
  */
 
-//! Contains the die!() convenience macro for exiting a program with a code and
+//! Contains the `die!()` convenience macro for exiting a program with a code and
 //! message.
 
 /// Exit the current program with a code and optional message.
