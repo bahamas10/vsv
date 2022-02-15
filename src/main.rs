@@ -39,15 +39,19 @@ fn do_main() -> Result<()> {
 
     // figure out subcommand to run
     match &args.command {
+        // `vsv` or `vsv status`
         None | Some(Commands::Status { .. }) => {
             commands::status::do_status(&cfg)
         }
+        // `vsv enable ...`
         Some(Commands::Enable { services }) => {
             commands::enable_disable::do_enable(&cfg, services)
         }
+        // `vsv disable ...`
         Some(Commands::Disable { services }) => {
             commands::enable_disable::do_disable(&cfg, services)
         }
+        // `vsv <anything> ...`
         Some(Commands::External(args)) => {
             commands::external::do_external(&cfg, args)
         }
