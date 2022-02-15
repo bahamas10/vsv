@@ -15,6 +15,17 @@ use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
 use yansi::Style;
 
+/// A `println!()`-like macro that will only print if `-v` is set.
+macro_rules! verbose {
+    ($cfg:expr, $fmt:expr $(, $args:expr )* $(,)? ) => {
+        if $cfg.verbose > 0 {
+            let s = format!($fmt $(, $args)*);
+            eprintln!(">  {}", Style::default().dimmed().paint(s));
+        }
+    };
+}
+pub(crate) use verbose;
+
 /// Format a status line - made specifically for vsv.
 ///
 /// # Example

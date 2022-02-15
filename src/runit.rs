@@ -35,9 +35,9 @@ pub struct RunitService {
 
 impl RunitService {
     /// Create a new runit service object from a given path and name.
-    pub fn new(path: &Path, name: &str) -> Self {
-        let path = path.to_path_buf();
+    pub fn new(name: &str, path: &Path) -> Self {
         let name = name.to_string();
+        let path = path.to_path_buf();
         Self { path, name }
     }
 
@@ -47,6 +47,16 @@ impl RunitService {
         let p = self.path.join("down");
 
         !p.exists()
+    }
+
+    /// Enable the service.
+    pub fn enable(&self) -> Result<()> {
+        Ok(())
+    }
+
+    /// Disable the service.
+    pub fn disable(&self) -> Result<()> {
+        Ok(())
     }
 
     /// Get the service PID if possible.
@@ -121,13 +131,13 @@ pub fn get_services(
             }
         }
 
-        let service = RunitService::new(&p, &name);
+        let service = RunitService::new(&name, &p);
         dirs.push(service);
 
         if log {
             let p = entry.path().join("log");
             let name = "- log";
-            let service = RunitService::new(&p, name);
+            let service = RunitService::new(name, &p);
             dirs.push(service);
         }
     }

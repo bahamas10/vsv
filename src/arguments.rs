@@ -56,6 +56,12 @@ pub enum Commands {
         filter: Vec<String>,
     },
 
+    /// Enable service(s).
+    Enable { services: Vec<String> },
+
+    /// Disable service(s).
+    Disable { services: Vec<String> },
+
     #[clap(external_subcommand)]
     External(Vec<String>),
 }
