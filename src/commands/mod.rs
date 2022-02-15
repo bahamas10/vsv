@@ -4,6 +4,8 @@
  * License: MIT
  */
 
+//! Subcommands for `vsv`.
+
 pub mod enable_disable;
 pub mod external;
 pub mod status;

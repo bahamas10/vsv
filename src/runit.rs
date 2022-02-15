@@ -51,11 +51,21 @@ impl RunitService {
 
     /// Enable the service.
     pub fn enable(&self) -> Result<()> {
+        // "/<svdir>/<service>/down"
+        let p = self.path.join("down");
+
+        fs::remove_file(p)?;
+
         Ok(())
     }
 
     /// Disable the service.
     pub fn disable(&self) -> Result<()> {
+        // "/<svdir>/<service>/down"
+        let p = self.path.join("down");
+
+        fs::File::create(p)?;
+
         Ok(())
     }
 

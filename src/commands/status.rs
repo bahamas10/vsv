@@ -4,7 +4,7 @@
  * License: MIT
  */
 
-//! `vsv status` subcommand
+//! `vsv status` subcommand.
 
 use anyhow::{Context, Result};
 use rayon::prelude::*;

@@ -4,7 +4,7 @@
  * License: MIT
  */
 
-//! `vsv enable` and `vsv disable'
+//! `vsv enable` and `vsv disable`.
 
 use anyhow::{anyhow, Result};
 
@@ -35,16 +35,28 @@ fn _do_enable_disable(cfg: &Config, args: &[String], mode: Mode) -> Result<()> {
     let cfg = dbg!(cfg);
     let args = dbg!(args);
 
+    let mut error = anyhow!("failed to modify service(s)");
+    let mut had_error = false;
+
     for name in args {
         let p = cfg.svdir.join(name);
         let svc = RunitService::new(name, &p);
         println!("service = {:?}", svc);
 
-        match mode {
+        let ret = match mode {
             Mode::Enable => svc.enable(),
             Mode::Disable => svc.disable(),
-        }?
+        };
+
+        if let Err(err) = ret {
+            had_error = true;
+            error = error.context(err);
+        }
     }
 
-    Ok(())
+    if had_error {
+        Err(error)
+    } else {
+        Ok(())
+    }
 }

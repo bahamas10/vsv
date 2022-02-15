@@ -4,7 +4,7 @@
  * License: MIT
  */
 
-//! `vsv <anything>`
+//! `vsv <anything>`.
 
 use std::env;
 
