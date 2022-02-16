@@ -19,7 +19,7 @@ mod runit;
 mod service;
 mod utils;
 
-use config::Config;
+use config::{Config, ProgramMode};
 use die::die;
 
 /// Main wrapped to return a result.
@@ -38,14 +38,10 @@ fn do_main() -> Result<()> {
 
     // figure out subcommand to run
     match cfg.mode {
-        config::ProgramMode::Status => commands::status::do_status(&cfg),
-        config::ProgramMode::Enable => {
-            commands::enable_disable::do_enable(&cfg)
-        }
-        config::ProgramMode::Disable => {
-            commands::enable_disable::do_disable(&cfg)
-        }
-        config::ProgramMode::External => commands::external::do_external(&cfg),
+        ProgramMode::Status => commands::status::do_status(&cfg),
+        ProgramMode::Enable => commands::enable_disable::do_enable(&cfg),
+        ProgramMode::Disable => commands::enable_disable::do_disable(&cfg),
+        ProgramMode::External => commands::external::do_external(&cfg),
     }
 }
 
