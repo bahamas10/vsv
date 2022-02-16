@@ -38,18 +38,10 @@ fn do_main() -> Result<()> {
 
     // figure out subcommand to run
     match cfg.mode {
-        config::Mode::Status => {
-            commands::status::do_status(&cfg)
-        },
-        config::Mode::Enable => {
-            commands::enable_disable::do_enable(&cfg)
-        },
-        config::Mode::Disable => {
-            commands::enable_disable::do_disable(&cfg)
-        },
-        config::Mode::External => {
-            commands::external::do_external(&cfg)
-        },
+        config::Mode::Status => commands::status::do_status(&cfg),
+        config::Mode::Enable => commands::enable_disable::do_enable(&cfg),
+        config::Mode::Disable => commands::enable_disable::do_disable(&cfg),
+        config::Mode::External => commands::external::do_external(&cfg),
     }
 }
 

@@ -86,11 +86,8 @@ impl Config {
         let verbose = args.verbose;
 
         // let arguments after `vsv status` work as well.
-        if let Some(Commands::Status {
-            tree: _tree,
-            log: _log,
-            filter: _,
-        }) = &args.command
+        if let Some(Commands::Status { tree: _tree, log: _log, filter: _ }) =
+            &args.command
         {
             if *_tree {
                 tree = true;
@@ -106,23 +103,21 @@ impl Config {
             None => {
                 let v: Vec<String> = vec![];
                 (Mode::Status, v)
-            },
+            }
             // `vsv status`
             Some(Commands::Status { tree: _, log: _, filter: operands }) => {
                 (Mode::Status, operands.to_vec())
-            },
+            }
             // `vsv enable ...`
             Some(Commands::Enable { services }) => {
                 (Mode::Enable, services.to_vec())
-            },
+            }
             // `vsv disable ...`
             Some(Commands::Disable { services }) => {
                 (Mode::Disable, services.to_vec())
-            },
+            }
             // `vsv <anything> ...`
-            Some(Commands::External(args)) => {
-                (Mode::External, args.to_vec())
-            },
+            Some(Commands::External(args)) => (Mode::External, args.to_vec()),
         };
 
         let o = Self {

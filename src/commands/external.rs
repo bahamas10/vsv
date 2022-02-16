@@ -22,7 +22,11 @@ pub fn do_external(cfg: &Config) -> Result<()> {
     let sv = cfg.sv_prog.to_owned();
 
     if cfg.operands.len() < 2 {
-        return Err(anyhow!("argument expected for '{} {}'", sv, cfg.operands[0]));
+        return Err(anyhow!(
+            "argument expected for '{} {}'",
+            sv,
+            cfg.operands[0]
+        ));
     }
 
     // format arguments

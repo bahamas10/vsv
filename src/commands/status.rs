@@ -17,17 +17,14 @@ use crate::{utils, utils::verbose};
 
 /// Handle `vsv status` or `vsv` without a subcommand given.
 pub fn do_status(cfg: &Config) -> Result<()> {
-    let filter = if cfg.operands.is_empty() {
-        None
-    } else {
-        Some(&cfg.operands[0])
-    };
+    let filter =
+        if cfg.operands.is_empty() { None } else { Some(&cfg.operands[0]) };
 
     // find all services
     let services = runit::get_services(&cfg.svdir, cfg.log, filter)
         .with_context(|| {
-        format!("failed to list services in {:?}", cfg.svdir)
-    })?;
+            format!("failed to list services in {:?}", cfg.svdir)
+        })?;
 
     // loop each service found (just gather data here, can be done in parallel)
     let services: Vec<(Service, Vec<String>)> = services

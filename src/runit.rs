@@ -118,7 +118,7 @@ pub fn get_services<T>(
     filter: Option<T>,
 ) -> Result<Vec<RunitService>>
 where
-    T: AsRef<str>
+    T: AsRef<str>,
 {
     // loop services directory and collect service names
     let mut dirs = Vec::new();
