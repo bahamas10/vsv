@@ -12,6 +12,7 @@
 
 use std::env;
 use std::ffi::OsString;
+use std::fmt;
 use std::path;
 
 use anyhow::{anyhow, Result};
@@ -36,11 +37,24 @@ pub const ENV_PSTREE_PROG: &str = "PSTREE_PROG";
 
 /// vsv execution modes (subcommands).
 #[derive(Debug)]
-pub enum Mode {
+pub enum ProgramMode {
     Status,
     Enable,
     Disable,
     External,
+}
+
+impl fmt::Display for ProgramMode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self {
+            ProgramMode::Status => "status",
+            ProgramMode::Enable => "enable",
+            ProgramMode::Disable => "disable",
+            ProgramMode::External => "(external)",
+        };
+
+        s.fmt(f)
+    }
 }
 
 /// Configuration options derived from the environment and CLI arguments.
@@ -64,7 +78,7 @@ pub struct Config {
     pub log: bool,
     pub verbose: usize,
     pub operands: Vec<String>,
-    pub mode: Mode,
+    pub mode: ProgramMode,
 }
 
 impl Config {
@@ -102,22 +116,24 @@ impl Config {
             // `vsv` (no subcommand)
             None => {
                 let v: Vec<String> = vec![];
-                (Mode::Status, v)
+                (ProgramMode::Status, v)
             }
             // `vsv status`
             Some(Commands::Status { tree: _, log: _, filter: operands }) => {
-                (Mode::Status, operands.to_vec())
+                (ProgramMode::Status, operands.to_vec())
             }
             // `vsv enable ...`
             Some(Commands::Enable { services }) => {
-                (Mode::Enable, services.to_vec())
+                (ProgramMode::Enable, services.to_vec())
             }
             // `vsv disable ...`
             Some(Commands::Disable { services }) => {
-                (Mode::Disable, services.to_vec())
+                (ProgramMode::Disable, services.to_vec())
             }
             // `vsv <anything> ...`
-            Some(Commands::External(args)) => (Mode::External, args.to_vec()),
+            Some(Commands::External(args)) => {
+                (ProgramMode::External, args.to_vec())
+            }
         };
 
         let o = Self {

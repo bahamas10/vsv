@@ -9,6 +9,7 @@
 use libc::pid_t;
 use path::{Path, PathBuf};
 use std::fs;
+use std::io;
 use std::path;
 use std::time;
 
@@ -54,7 +55,13 @@ impl RunitService {
         // "/<svdir>/<service>/down"
         let p = self.path.join("down");
 
-        fs::remove_file(p)?;
+        if let Err(err) = fs::remove_file(p) {
+            // allow ENOENT to be considered success as well
+            match err.kind() {
+                io::ErrorKind::NotFound => return Ok(()),
+                _ => return Err(err.into()),
+            };
+        };
 
         Ok(())
     }
