@@ -16,17 +16,17 @@ use crate::utils;
 use crate::{config, config::Config};
 
 /// Handle `vsv <any-non-matching-command>`.
-pub fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
-    assert!(!args.is_empty());
+pub fn do_external(cfg: &Config) -> Result<()> {
+    assert!(!cfg.operands.is_empty());
 
     let sv = cfg.sv_prog.to_owned();
 
-    if args.len() < 2 {
-        return Err(anyhow!("argument expected for '{} {}'", sv, args[0]));
+    if cfg.operands.len() < 2 {
+        return Err(anyhow!("argument expected for '{} {}'", sv, cfg.operands[0]));
     }
 
     // format arguments
-    let args_s = args.join(" ");
+    let args_s = cfg.operands.join(" ");
 
     // set SVDIR env to match what user wanted
     env::set_var(config::ENV_SVDIR, &cfg.svdir);
@@ -45,7 +45,7 @@ pub fn do_external(cfg: &Config, args: &[String]) -> Result<()> {
     );
 
     // run the actual program
-    let status = utils::run_program_get_status(&sv, args);
+    let status = utils::run_program_get_status(&sv, &cfg.operands);
 
     // check the process status
     match status {

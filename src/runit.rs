@@ -112,11 +112,14 @@ impl RunitService {
 ///
 /// You may also specify an optional filter to only allow services that contain
 /// a given string.
-pub fn get_services(
+pub fn get_services<T>(
     path: &Path,
     log: bool,
-    filter: Option<String>,
-) -> Result<Vec<RunitService>> {
+    filter: Option<T>,
+) -> Result<Vec<RunitService>>
+where
+    T: AsRef<str>
+{
     // loop services directory and collect service names
     let mut dirs = Vec::new();
 
@@ -136,7 +139,7 @@ pub fn get_services(
             .to_string();
 
         if let Some(ref filter) = filter {
-            if !name.contains(filter) {
+            if !name.contains(filter.as_ref()) {
                 continue;
             }
         }

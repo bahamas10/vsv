@@ -21,36 +21,27 @@ use crate::config;
 use crate::utils;
 
 // default values
-/// Default Runit service dir.
 pub const DEFAULT_SVDIR: &str = "/var/service";
-
-/// Default Linux proc fs dir.
 pub const DEFAULT_PROC_DIR: &str = "/proc";
-
-/// Default `sv` command name.
 pub const DEFAULT_SV_PROG: &str = "sv";
-
-/// Default `pstree` command name.
 pub const DEFAULT_PSTREE_PROG: &str = "pstree";
-
-/// Default Runit user dir (relative to user's home directory).
 pub const DEFAULT_USER_DIR: &str = "runit/service";
 
 // env var name
-/// Env var name for `NO_COLOR`
 pub const ENV_NO_COLOR: &str = "NO_COLOR";
-
-/// Env var name for `SVDIR`
 pub const ENV_SVDIR: &str = "SVDIR";
-
-/// Env var name for `PROC_DIR`
 pub const ENV_PROC_DIR: &str = "PROC_DIR";
-
-/// Env var name for `SV_PROG`
 pub const ENV_SV_PROG: &str = "SV_PROG";
-
-/// Env var name for `PSTREE_PROG`
 pub const ENV_PSTREE_PROG: &str = "PSTREE_PROG";
+
+/// vsv execution modes (subcommands).
+#[derive(Debug)]
+pub enum Mode {
+    Status,
+    Enable,
+    Disable,
+    External,
+}
 
 /// Configuration options derived from the environment and CLI arguments.
 ///
@@ -72,7 +63,8 @@ pub struct Config {
     pub tree: bool,
     pub log: bool,
     pub verbose: usize,
-    filter: Option<String>,
+    pub operands: Vec<String>,
+    pub mode: Mode,
 }
 
 impl Config {
@@ -80,7 +72,6 @@ impl Config {
     pub fn from_args(args: &Args) -> Result<Self> {
         let mut tree = args.tree;
         let mut log = args.log;
-        let mut filter = None;
 
         let proc_path: path::PathBuf = env::var_os(config::ENV_PROC_DIR)
             .unwrap_or_else(|| OsString::from(DEFAULT_PROC_DIR))
@@ -98,7 +89,7 @@ impl Config {
         if let Some(Commands::Status {
             tree: _tree,
             log: _log,
-            filter: _filter,
+            filter: _,
         }) = &args.command
         {
             if *_tree {
@@ -107,9 +98,31 @@ impl Config {
             if *_log {
                 log = true;
             }
-            if !_filter.is_empty() {
-                filter = Some(_filter[0].to_owned());
-            }
+        };
+
+        // figure out subcommand to run
+        let (mode, operands) = match &args.command {
+            // `vsv` (no subcommand)
+            None => {
+                let v: Vec<String> = vec![];
+                (Mode::Status, v)
+            },
+            // `vsv status`
+            Some(Commands::Status { tree: _, log: _, filter: operands }) => {
+                (Mode::Status, operands.to_vec())
+            },
+            // `vsv enable ...`
+            Some(Commands::Enable { services }) => {
+                (Mode::Enable, services.to_vec())
+            },
+            // `vsv disable ...`
+            Some(Commands::Disable { services }) => {
+                (Mode::Disable, services.to_vec())
+            },
+            // `vsv <anything> ...`
+            Some(Commands::External(args)) => {
+                (Mode::External, args.to_vec())
+            },
         };
 
         let o = Self {
@@ -121,15 +134,11 @@ impl Config {
             tree,
             log,
             verbose,
-            filter,
+            operands,
+            mode,
         };
 
         Ok(o)
-    }
-
-    /// Get a copy of the optional `filter` option.
-    pub fn get_filter(&self) -> Option<String> {
-        self.filter.as_ref().map(|filter| filter.to_owned())
     }
 }
 
@@ -193,5 +202,6 @@ fn get_svdir(
     let svdir = env::var_os(config::ENV_SVDIR)
         .unwrap_or_else(|| OsString::from(config::DEFAULT_SVDIR));
     let buf = path::PathBuf::from(&svdir);
+
     Ok(buf)
 }

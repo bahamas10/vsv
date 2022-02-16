@@ -8,44 +8,38 @@
 
 use anyhow::{anyhow, Result};
 
+use crate::config;
 use crate::config::Config;
 use crate::runit::RunitService;
 
-enum Mode {
-    Enable,
-    Disable,
+/// Handle `vsv enable`.
+pub fn do_enable(cfg: &Config) -> Result<()> {
+    _do_enable_disable(cfg)
 }
 
 /// Handle `vsv enable`.
-pub fn do_enable(cfg: &Config, svcs: &[String]) -> Result<()> {
-    _do_enable_disable(cfg, svcs, Mode::Enable)
-}
-
-/// Handle `vsv enable`.
-pub fn do_disable(cfg: &Config, svcs: &[String]) -> Result<()> {
-    _do_enable_disable(cfg, svcs, Mode::Disable)
+pub fn do_disable(cfg: &Config) -> Result<()> {
+    _do_enable_disable(cfg)
 }
 
 /// Handle `vsv enable` and `vsv disable`.
-fn _do_enable_disable(cfg: &Config, args: &[String], mode: Mode) -> Result<()> {
-    if args.is_empty() {
+fn _do_enable_disable(cfg: &Config) -> Result<()> {
+    if cfg.operands.is_empty() {
         return Err(anyhow!("at least one (1) service required"));
     }
-
-    let cfg = dbg!(cfg);
-    let args = dbg!(args);
 
     let mut error = anyhow!("failed to modify service(s)");
     let mut had_error = false;
 
-    for name in args {
+    for name in &cfg.operands {
         let p = cfg.svdir.join(name);
         let svc = RunitService::new(name, &p);
         println!("service = {:?}", svc);
 
-        let ret = match mode {
-            Mode::Enable => svc.enable(),
-            Mode::Disable => svc.disable(),
+        let ret = match cfg.mode {
+            config::Mode::Enable => svc.enable(),
+            config::Mode::Disable => svc.disable(),
+            _ => unreachable!(),
         };
 
         if let Err(err) = ret {
