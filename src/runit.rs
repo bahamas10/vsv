@@ -25,9 +25,8 @@ pub enum RunitServiceState {
 
 /// A runit service.
 ///
-/// This struct doesn't create a new service for runit, does it actually every
-/// modify anything on the user's underlying filesystem.  Instead, this struct
-/// allows for read-only access into the state of an existing runit service.
+/// This struct defines an object that can represent an individual service for
+/// Runit.
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RunitService {
     pub path: PathBuf,

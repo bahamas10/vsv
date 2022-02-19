@@ -12,3 +12,6 @@ rayon = "1.5.1"
 yansi = "0.5.0"
 
 [features]
+
+[dev-dependencies]
+assert_cmd = "2.0.4"

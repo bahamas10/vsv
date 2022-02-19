@@ -71,8 +71,8 @@ pub fn format_status_line<T: AsRef<str>>(
         let (text, style) = o;
 
         let text = trim_long_string(text.as_ref(), max, suffix);
-
         let column = format!(" {0:1$}", style.paint(text), max);
+
         line.push_str(&column);
     }
 
