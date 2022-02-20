@@ -13,7 +13,7 @@
 use std::env;
 use std::ffi::OsString;
 use std::fmt;
-use std::path;
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 
@@ -65,13 +65,13 @@ impl fmt::Display for ProgramMode {
 #[derive(Debug)]
 pub struct Config {
     // env vars only
-    pub proc_path: path::PathBuf,
+    pub proc_path: PathBuf,
     pub sv_prog: String,
     pub pstree_prog: String,
 
     // env vars or CLI options
     pub colorize: bool,
-    pub svdir: path::PathBuf,
+    pub svdir: PathBuf,
 
     // CLI options only
     pub tree: bool,
@@ -87,7 +87,7 @@ impl Config {
         let mut tree = args.tree;
         let mut log = args.log;
 
-        let proc_path: path::PathBuf = env::var_os(config::ENV_PROC_DIR)
+        let proc_path: PathBuf = env::var_os(config::ENV_PROC_DIR)
             .unwrap_or_else(|| OsString::from(DEFAULT_PROC_DIR))
             .into();
         let sv_prog = env::var(config::ENV_SV_PROG)
@@ -191,10 +191,7 @@ fn should_colorize_output(color_arg: &Option<String>) -> Result<bool> {
 /// 2. CLI option (`-u`) given
 /// 3. env `SVDIR` given
 /// 4. use `DEFAULT_SVDIR` (`"/var/service"`)
-fn get_svdir(
-    dir_arg: &Option<path::PathBuf>,
-    user_arg: bool,
-) -> Result<path::PathBuf> {
+fn get_svdir(dir_arg: &Option<PathBuf>, user_arg: bool) -> Result<PathBuf> {
     // `-d <dir>`
     if let Some(dir) = dir_arg {
         return Ok(dir.to_path_buf());
@@ -212,7 +209,7 @@ fn get_svdir(
     // env or default
     let svdir = env::var_os(config::ENV_SVDIR)
         .unwrap_or_else(|| OsString::from(config::DEFAULT_SVDIR));
-    let buf = path::PathBuf::from(&svdir);
+    let buf = PathBuf::from(&svdir);
 
     Ok(buf)
 }

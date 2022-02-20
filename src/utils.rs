@@ -353,7 +353,7 @@ mod tests {
     fn test_isatty_bad_fd() {
         let b = isatty(-1);
 
-        assert_eq!(b, false, "fd -1 is not a tty");
+        assert!(!b, "fd -1 is not a tty");
     }
 
     #[test]
