@@ -13,6 +13,34 @@ use anyhow::Result;
 
 mod common;
 
+fn parse_status_line<'a>(line: &'a str) -> Vec<&'a str> {
+    let mut vec: Vec<&str> = vec![];
+    let mut chars = line.chars().map(|c| c.len_utf8());
+
+    let lengths = [1, 20, 7, 9, 8, 17];
+
+    // skip the first space char
+    let mut start = 0;
+    start += chars.next().unwrap();
+
+    for num in lengths {
+        let mut end = start;
+
+        for _ in 0..num {
+            end += chars.next().unwrap();
+        }
+
+        vec.push(&line[start..end]);
+
+        let space = chars.next().unwrap();
+        start = end + space;
+    }
+
+    vec.push(&line[start..]);
+
+    vec
+}
+
 fn parse_and_verify_status_output<'a>(s: &'a str) -> Result<Vec<Vec<&'a str>>> {
     let mut lines: Vec<Vec<&str>> = vec![];
 
@@ -26,18 +54,22 @@ fn parse_and_verify_status_output<'a>(s: &'a str) -> Result<Vec<Vec<&'a str>>> {
             continue;
         }
 
-        let line = line.trim();
-        let items: Vec<&str> = line.split_whitespace().collect();
+        let items = parse_status_line(line);
         lines.push(items);
     }
 
-    assert!(!lines.is_empty(), "status must have at least one line (the header)");
+    assert!(
+        !lines.is_empty(),
+        "status must have at least one line (the header)"
+    );
 
+    // check header
     let header = lines.remove(0);
-    let good_header = &["SERVICE", "STATE", "ENABLED", "PID", "COMMAND", "TIME"];
+    let good_header =
+        &["", "SERVICE", "STATE", "ENABLED", "PID", "COMMAND", "TIME"];
 
-    for (i, s) in good_header.iter().enumerate() {
-        assert_eq!(&header[i], s);
+    for (i, good_item) in good_header.iter().enumerate() {
+        assert_eq!(&header[i].trim(), good_item);
     }
 
     Ok(lines)
@@ -75,7 +107,6 @@ fn full_synthetic_test() -> Result<()> {
     let status = parse_and_verify_status_output(stdout)?;
 
     assert!(status.is_empty(), "no services");
-
 
     Ok(())
 }
