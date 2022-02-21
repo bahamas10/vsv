@@ -4,18 +4,13 @@
  * License: MIT
  */
 
-use std::path::PathBuf;
-
+use anyhow::Result;
 use assert_cmd::Command;
 
-pub fn get_tmp_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("tests")
-}
-
-pub fn vsv() -> Command {
-    let mut cmd = Command::cargo_bin("vsv").unwrap();
+pub fn vsv() -> Result<Command> {
+    let mut cmd = Command::cargo_bin("vsv")?;
 
     cmd.env_clear();
 
-    cmd
+    Ok(cmd)
 }

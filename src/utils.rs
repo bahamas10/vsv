@@ -62,7 +62,7 @@ pub fn format_status_line<T: AsRef<str>>(
         (enabled, 9, "..."),
         (pid, 8, "..."),
         (command, 17, "..."),
-        (time, 99, "..."),
+        (time, 0, "..."),
     ];
 
     let mut line = String::new();
@@ -70,8 +70,12 @@ pub fn format_status_line<T: AsRef<str>>(
     for (o, max, suffix) in data {
         let (text, style) = o;
 
-        let text = trim_long_string(text.as_ref(), max, suffix);
-        let column = format!(" {0:1$}", style.paint(text), max);
+        let column = if max == 0 {
+            format!(" {}", style.paint(text.as_ref()))
+        } else {
+            let text = trim_long_string(text.as_ref(), max, suffix);
+            format!(" {0:1$}", style.paint(text), max)
+        };
 
         line.push_str(&column);
     }

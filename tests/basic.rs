@@ -6,11 +6,15 @@
  * License: MIT
  */
 
+use anyhow::Result;
+
 mod common;
 
 #[test]
-fn usage() {
-    let assert = common::vsv().arg("-h").assert();
+fn usage() -> Result<()> {
+    let assert = common::vsv()?.arg("-h").assert();
 
     assert.success().stderr("");
+
+    Ok(())
 }
