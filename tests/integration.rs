@@ -7,13 +7,18 @@
  */
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str;
 
 use anyhow::{anyhow, Result};
-//use assert_cmd::Command;
+use assert_cmd::Command;
 
 mod common;
+
+struct Config {
+    proc_path: PathBuf,
+    service_path: PathBuf,
+}
 
 fn get_tmp_path() -> PathBuf {
     PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("tests")
@@ -85,14 +90,9 @@ fn parse_status_output(s: &str) -> Result<Vec<Vec<&str>>> {
     Ok(lines)
 }
 
-fn create_service(
-    name: &str,
-    pid: &str,
-    proc_path: &Path,
-    service_path: &Path,
-) -> Result<()> {
-    let svc_dir = service_path.join(name);
-    let proc_pid_dir = proc_path.join(pid);
+fn create_service(cfg: &Config, name: &str, pid: &str) -> Result<()> {
+    let svc_dir = cfg.service_path.join(name);
+    let proc_pid_dir = cfg.proc_path.join(pid);
     let supervise_dir = svc_dir.join("supervise");
 
     fs::create_dir(&svc_dir)?;
@@ -136,49 +136,62 @@ fn compare_output(have: &[Vec<&str>], want: &[&[&str; 6]]) {
     println!("output the same\n");
 }
 
-/*
-fn run_cmd_get_parsed_output(cmd: &Command) -> Vec<Vec<&
-*/
+fn run_cmd_get_output(cmd: &mut Command) -> Result<String> {
+    let assert = cmd.assert().success();
+    let output = assert.get_output();
+    let stdout = str::from_utf8(&output.stdout)?;
+
+    Ok(stdout.to_string())
+}
 
 #[test]
 fn full_synthetic_test() -> Result<()> {
     let tmp_path = get_tmp_path();
-    let proc_path = tmp_path.join("proc");
-    let service_path = tmp_path.join("service");
+
+    let cfg = Config {
+        proc_path: tmp_path.join("proc"),
+        service_path: tmp_path.join("service"),
+    };
 
     // initialize directories
     // this can fail - that's ok
     let _ = fs::remove_dir_all(&tmp_path);
 
     // create test dirs
-    for p in [&tmp_path, &proc_path, &service_path] {
+    for p in [&tmp_path, &cfg.proc_path, &cfg.service_path] {
         fs::create_dir(p)?;
     }
 
     // create the vsv command to use for all tests
     let mut cmd = common::vsv()?;
-    cmd.env("SVDIR", &service_path);
-    cmd.env("PROC_DIR", &proc_path);
+    cmd.env("SVDIR", &cfg.service_path);
+    cmd.env("PROC_DIR", &cfg.proc_path);
 
     // test no services
-    let assert = cmd.assert().success();
-    let output = assert.get_output();
-    let stdout = str::from_utf8(&output.stdout)?;
-
-    let status = parse_status_output(stdout)?;
+    let stdout = run_cmd_get_output(&mut cmd)?;
+    let status = parse_status_output(&stdout)?;
 
     assert!(status.is_empty(), "no services");
 
     // test 1 service
-    create_service("foo", "123", &proc_path, &service_path)?;
+    create_service(&cfg, "foo", "123")?;
 
-    let assert = cmd.assert().success();
-    let output = assert.get_output();
-    let stdout = str::from_utf8(&output.stdout)?;
-
-    let status = parse_status_output(stdout)?;
+    let stdout = run_cmd_get_output(&mut cmd)?;
+    let status = parse_status_output(&stdout)?;
 
     let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
+    compare_output(&status, want);
+
+    // test 2 service
+    create_service(&cfg, "bar", "234")?;
+
+    let stdout = run_cmd_get_output(&mut cmd)?;
+    let status = parse_status_output(&stdout)?;
+
+    let want = &[
+        &["✔", "bar", "run", "true", "234", "bar-cmd"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+    ];
     compare_output(&status, want);
 
     Ok(())
