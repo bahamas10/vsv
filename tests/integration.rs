@@ -110,6 +110,32 @@ fn create_service(
     Ok(())
 }
 
+//fn compare_output(have: &Vec<Vec<&str>>, want: &Vec<Vec<&str>>) {
+fn compare_output(have: &[Vec<&str>], want: &[&[&str; 6]]) {
+    println!("compare_output\nhave = '{:?}'\nwant = '{:?}'", have, want);
+
+    assert_eq!(have.len(), want.len(), "status lines not same length");
+
+    for (line_no, have_items) in have.iter().enumerate() {
+        let want_items = want[line_no];
+
+        for (field_no, want_item) in want_items.iter().enumerate() {
+            let have_item = &have_items[field_no].trim_end();
+            println!(
+                "line {} field {}: checking '{}' == '{}'",
+                line_no, field_no, have_item, want_item
+            );
+            assert_eq!(
+                have_item, want_item,
+                "line {} field {} incorrect",
+                line_no, field_no
+            );
+        }
+    }
+
+    println!("output the same\n");
+}
+
 /*
 fn run_cmd_get_parsed_output(cmd: &Command) -> Vec<Vec<&
 */
@@ -152,16 +178,8 @@ fn full_synthetic_test() -> Result<()> {
 
     let status = parse_status_output(stdout)?;
 
-    println!("status = '{:?}'", status);
-
-    assert_eq!(status.len(), 1, "one service");
-    let line = &status[0];
-
-    let want_line = &["✔", "foo", "run", "true", "123", "foo-cmd"];
-
-    for (i, good_item) in want_line.iter().enumerate() {
-        assert_eq!(&line[i].trim_end(), good_item);
-    }
+    let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
+    compare_output(&status, want);
 
     Ok(())
 }
