@@ -47,7 +47,9 @@ fn parse_status_line(line: &str) -> Result<Vec<&str>> {
         let space = chars
             .next()
             .ok_or(anyhow!("next field should have a space char"))?;
+
         assert_eq!(space, 1, "should be space character");
+
         start = end + space;
     }
 
@@ -90,22 +92,37 @@ fn parse_status_output(s: &str) -> Result<Vec<Vec<&str>>> {
     Ok(lines)
 }
 
-fn create_service(cfg: &Config, name: &str, pid: &str) -> Result<()> {
+fn create_service(cfg: &Config, name: &str, pid: Option<&str>) -> Result<()> {
     let svc_dir = cfg.service_path.join(name);
-    let proc_pid_dir = cfg.proc_path.join(pid);
     let supervise_dir = svc_dir.join("supervise");
+    let stat_file = supervise_dir.join("stat");
 
     fs::create_dir(&svc_dir)?;
-    fs::create_dir(&proc_pid_dir)?;
     fs::create_dir(&supervise_dir)?;
-
-    let pid_file = supervise_dir.join("pid");
-    let stat_file = supervise_dir.join("stat");
-    let cmd_file = proc_pid_dir.join("cmdline");
-
-    fs::write(&pid_file, format!("{}\n", pid))?;
     fs::write(&stat_file, "run\n")?;
-    fs::write(&cmd_file, format!("{}-cmd\0", name))?;
+
+    // write pid and proc info if supplied
+    if let Some(pid) = pid {
+        let proc_pid_dir = cfg.proc_path.join(pid);
+        let pid_file = supervise_dir.join("pid");
+        let cmd_file = proc_pid_dir.join("cmdline");
+
+        fs::create_dir(&proc_pid_dir)?;
+        fs::write(&pid_file, format!("{}\n", pid))?;
+        fs::write(&cmd_file, format!("{}-cmd\0", name))?;
+    }
+
+    Ok(())
+}
+
+fn remove_service(cfg: &Config, name: &str, pid: Option<&str>) -> Result<()> {
+    let svc_dir = cfg.service_path.join(name);
+    fs::remove_dir_all(&svc_dir)?;
+
+    if let Some(pid) = pid {
+        let proc_pid_dir = cfg.proc_path.join(pid);
+        fs::remove_dir_all(&proc_pid_dir)?;
+    }
 
     Ok(())
 }
@@ -116,15 +133,20 @@ fn compare_output(have: &[Vec<&str>], want: &[&[&str; 6]]) {
 
     assert_eq!(have.len(), want.len(), "status lines not same length");
 
+    // loop each line of output
     for (line_no, have_items) in have.iter().enumerate() {
         let want_items = want[line_no];
 
+        // loop each field in the line
         for (field_no, want_item) in want_items.iter().enumerate() {
             let have_item = &have_items[field_no].trim_end();
+
             println!(
                 "line {} field {}: checking '{}' == '{}'",
                 line_no, field_no, have_item, want_item
             );
+
+            // compare the fields to each other
             assert_eq!(
                 have_item, want_item,
                 "line {} field {} incorrect",
@@ -136,12 +158,18 @@ fn compare_output(have: &[Vec<&str>], want: &[&[&str; 6]]) {
     println!("output the same\n");
 }
 
-fn run_cmd_get_output(cmd: &mut Command) -> Result<String> {
+fn run_command_compare_output(
+    cmd: &mut Command,
+    want: &[&[&str; 6]],
+) -> Result<()> {
     let assert = cmd.assert().success();
     let output = assert.get_output();
     let stdout = str::from_utf8(&output.stdout)?;
+    let status = parse_status_output(stdout)?;
 
-    Ok(stdout.to_string())
+    compare_output(&status, want);
+
+    Ok(())
 }
 
 #[test]
@@ -153,46 +181,64 @@ fn full_synthetic_test() -> Result<()> {
         service_path: tmp_path.join("service"),
     };
 
-    // initialize directories
-    // this can fail - that's ok
+    // create the vsv command to use for all tests
+    let mut cmd = common::vsv()?;
+    cmd.env("SVDIR", &cfg.service_path);
+    cmd.env("PROC_DIR", &cfg.proc_path);
+
+    // start fresh by removing the service and proc paths
     let _ = fs::remove_dir_all(&tmp_path);
+
+    // vsv should fail when the service dir doesn't exist
+    cmd.assert().failure();
 
     // create test dirs
     for p in [&tmp_path, &cfg.proc_path, &cfg.service_path] {
         fs::create_dir(p)?;
     }
 
-    // create the vsv command to use for all tests
-    let mut cmd = common::vsv()?;
-    cmd.env("SVDIR", &cfg.service_path);
-    cmd.env("PROC_DIR", &cfg.proc_path);
-
     // test no services
-    let stdout = run_cmd_get_output(&mut cmd)?;
-    let status = parse_status_output(&stdout)?;
+    let want: &[&[&str; 6]] = &[];
+    run_command_compare_output(&mut cmd, want)?;
 
-    assert!(status.is_empty(), "no services");
-
-    // test 1 service
-    create_service(&cfg, "foo", "123")?;
-
-    let stdout = run_cmd_get_output(&mut cmd)?;
-    let status = parse_status_output(&stdout)?;
-
+    // test service
+    create_service(&cfg, "foo", Some("123"))?;
     let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
-    compare_output(&status, want);
+    run_command_compare_output(&mut cmd, want)?;
 
-    // test 2 service
-    create_service(&cfg, "bar", "234")?;
-
-    let stdout = run_cmd_get_output(&mut cmd)?;
-    let status = parse_status_output(&stdout)?;
-
+    // test another service
+    create_service(&cfg, "bar", Some("234"))?;
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "foo", "run", "true", "123", "foo-cmd"],
     ];
-    compare_output(&status, want);
+    run_command_compare_output(&mut cmd, want)?;
+
+    // test service no pid
+    create_service(&cfg, "baz", None)?;
+    let want = &[
+        &["✔", "bar", "run", "true", "234", "bar-cmd"],
+        &["✔", "baz", "run", "true", "---", "---"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+    ];
+    run_command_compare_output(&mut cmd, want)?;
+
+    // test service bad pid
+    create_service(&cfg, "bat", Some("uh oh this one won't parse"))?;
+    let want = &[
+        &["✔", "bar", "run", "true", "234", "bar-cmd"],
+        &["✔", "bat", "run", "true", "---", "---"],
+        &["✔", "baz", "run", "true", "---", "---"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+    ];
+    run_command_compare_output(&mut cmd, want)?;
+
+    // remove services
+    remove_service(&cfg, "bar", Some("234"))?;
+    remove_service(&cfg, "bat", None)?;
+    remove_service(&cfg, "baz", None)?;
+    let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
+    run_command_compare_output(&mut cmd, want)?;
 
     Ok(())
 }
