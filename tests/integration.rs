@@ -20,6 +20,15 @@ struct Config {
     service_path: PathBuf,
 }
 
+fn vsv(cfg: &Config) -> Result<Command> {
+    let mut cmd = common::vsv()?;
+
+    cmd.env("SVDIR", &cfg.service_path);
+    cmd.env("PROC_DIR", &cfg.proc_path);
+
+    Ok(cmd)
+}
+
 fn get_tmp_path() -> PathBuf {
     PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("tests")
 }
@@ -92,14 +101,19 @@ fn parse_status_output(s: &str) -> Result<Vec<Vec<&str>>> {
     Ok(lines)
 }
 
-fn create_service(cfg: &Config, name: &str, pid: Option<&str>) -> Result<()> {
+fn create_service(
+    cfg: &Config,
+    name: &str,
+    state: &str,
+    pid: Option<&str>,
+) -> Result<()> {
     let svc_dir = cfg.service_path.join(name);
     let supervise_dir = svc_dir.join("supervise");
     let stat_file = supervise_dir.join("stat");
 
     fs::create_dir(&svc_dir)?;
     fs::create_dir(&supervise_dir)?;
-    fs::write(&stat_file, "run\n")?;
+    fs::write(&stat_file, format!("{}\n", state))?;
 
     // write pid and proc info if supplied
     if let Some(pid) = pid {
@@ -134,12 +148,14 @@ fn compare_output(have: &[Vec<&str>], want: &[&[&str; 6]]) {
     assert_eq!(have.len(), want.len(), "status lines not same length");
 
     // loop each line of output
-    for (line_no, have_items) in have.iter().enumerate() {
-        let want_items = want[line_no];
+    for (i, have_items) in have.iter().enumerate() {
+        let line_no = i + 1;
+        let want_items = want[i];
 
         // loop each field in the line
-        for (field_no, want_item) in want_items.iter().enumerate() {
-            let have_item = &have_items[field_no].trim_end();
+        for (j, want_item) in want_items.iter().enumerate() {
+            let field_no = j + 1;
+            let have_item = &have_items[j].trim_end();
 
             println!(
                 "line {} field {}: checking '{}' == '{}'",
@@ -182,15 +198,13 @@ fn full_synthetic_test() -> Result<()> {
     };
 
     // create the vsv command to use for all tests
-    let mut cmd = common::vsv()?;
-    cmd.env("SVDIR", &cfg.service_path);
-    cmd.env("PROC_DIR", &cfg.proc_path);
+    let mut status_cmd = vsv(&cfg)?;
 
     // start fresh by removing the service and proc paths
     let _ = fs::remove_dir_all(&tmp_path);
 
     // vsv should fail when the service dir doesn't exist
-    cmd.assert().failure();
+    status_cmd.assert().failure();
 
     // create test dirs
     for p in [&tmp_path, &cfg.proc_path, &cfg.service_path] {
@@ -199,46 +213,130 @@ fn full_synthetic_test() -> Result<()> {
 
     // test no services
     let want: &[&[&str; 6]] = &[];
-    run_command_compare_output(&mut cmd, want)?;
+    run_command_compare_output(&mut status_cmd, want)?;
 
     // test service
-    create_service(&cfg, "foo", Some("123"))?;
+    create_service(&cfg, "foo", "run", Some("123"))?;
     let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
-    run_command_compare_output(&mut cmd, want)?;
+    run_command_compare_output(&mut status_cmd, want)?;
 
     // test another service
-    create_service(&cfg, "bar", Some("234"))?;
+    create_service(&cfg, "bar", "run", Some("234"))?;
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "foo", "run", "true", "123", "foo-cmd"],
     ];
-    run_command_compare_output(&mut cmd, want)?;
+    run_command_compare_output(&mut status_cmd, want)?;
 
     // test service no pid
-    create_service(&cfg, "baz", None)?;
+    create_service(&cfg, "baz", "run", None)?;
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "baz", "run", "true", "---", "---"],
         &["✔", "foo", "run", "true", "123", "foo-cmd"],
     ];
-    run_command_compare_output(&mut cmd, want)?;
+    run_command_compare_output(&mut status_cmd, want)?;
 
     // test service bad pid
-    create_service(&cfg, "bat", Some("uh oh this one won't parse"))?;
+    create_service(&cfg, "bat", "run", Some("uh oh this one won't parse"))?;
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "bat", "run", "true", "---", "---"],
         &["✔", "baz", "run", "true", "---", "---"],
         &["✔", "foo", "run", "true", "123", "foo-cmd"],
     ];
-    run_command_compare_output(&mut cmd, want)?;
+    run_command_compare_output(&mut status_cmd, want)?;
 
     // remove services
     remove_service(&cfg, "bar", Some("234"))?;
     remove_service(&cfg, "bat", None)?;
     remove_service(&cfg, "baz", None)?;
     let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
-    run_command_compare_output(&mut cmd, want)?;
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // add down service
+    create_service(&cfg, "bar", "down", None)?;
+    let want = &[
+        &["X", "bar", "down", "true", "---", "---"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+    ];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // add unknown state service
+    create_service(&cfg, "bat", "something-bad", None)?;
+    let want = &[
+        &["X", "bar", "down", "true", "---", "---"],
+        &["?", "bat", "n/a", "true", "---", "---"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+    ];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // add long service name
+    create_service(&cfg, "some-really-long-service-name", "run", Some("1"))?;
+    let want = &[
+        &["X", "bar", "down", "true", "---", "---"],
+        &["?", "bat", "n/a", "true", "---", "---"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+        &["✔", "some-really-long-...", "run", "true", "1", "some-really-lo..."],
+    ];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // remove services
+    remove_service(&cfg, "some-really-long-service-name", Some("1"))?;
+    remove_service(&cfg, "bar", None)?;
+    remove_service(&cfg, "bat", None)?;
+    let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // add some more services
+    create_service(&cfg, "bar", "run", Some("234"))?;
+    create_service(&cfg, "baz", "run", Some("345"))?;
+    create_service(&cfg, "bat", "run", Some("456"))?;
+
+    // test disable
+    let mut cmd = vsv(&cfg)?;
+    cmd.args(&["disable", "bar", "baz"]).assert().success();
+
+    let want = &[
+        &["✔", "bar", "run", "false", "234", "bar-cmd"],
+        &["✔", "bat", "run", "true", "456", "bat-cmd"],
+        &["✔", "baz", "run", "false", "345", "baz-cmd"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+    ];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // test enable
+    let mut cmd = vsv(&cfg)?;
+    cmd.args(&["enable", "foo", "bar"]).assert().success();
+    let want = &[
+        &["✔", "bar", "run", "true", "234", "bar-cmd"],
+        &["✔", "bat", "run", "true", "456", "bat-cmd"],
+        &["✔", "baz", "run", "false", "345", "baz-cmd"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+    ];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // test bad disable
+    let mut cmd = vsv(&cfg)?;
+    cmd.args(&["disable", "fake-service", "foo"]).assert().failure();
+    let want = &[
+        &["✔", "bar", "run", "true", "234", "bar-cmd"],
+        &["✔", "bat", "run", "true", "456", "bat-cmd"],
+        &["✔", "baz", "run", "false", "345", "baz-cmd"],
+        &["✔", "foo", "run", "false", "123", "foo-cmd"],
+    ];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // test bad enable
+    let mut cmd = vsv(&cfg)?;
+    cmd.args(&["enable", "fake-service", "foo"]).assert().failure();
+    let want = &[
+        &["✔", "bar", "run", "true", "234", "bar-cmd"],
+        &["✔", "bat", "run", "true", "456", "bat-cmd"],
+        &["✔", "baz", "run", "false", "345", "baz-cmd"],
+        &["✔", "foo", "run", "true", "123", "foo-cmd"],
+    ];
+    run_command_compare_output(&mut status_cmd, want)?;
 
     Ok(())
 }

@@ -18,3 +18,29 @@ fn usage() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn external_success() -> Result<()> {
+    let mut cmd = common::vsv()?;
+
+    cmd.env("SV_PROG", "true");
+
+    let assert = cmd.args(&["external", "cmd"]).assert();
+
+    assert.success();
+
+    Ok(())
+}
+
+#[test]
+fn external_failure() -> Result<()> {
+    let mut cmd = common::vsv()?;
+
+    cmd.env("SV_PROG", "false");
+
+    let assert = cmd.args(&["external", "cmd"]).assert();
+
+    assert.failure();
+
+    Ok(())
+}

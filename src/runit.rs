@@ -41,6 +41,13 @@ impl RunitService {
         Self { path, name }
     }
 
+    /// Check if service is valid.
+    pub fn valid(&self) -> bool {
+        let p = self.path.join("supervise");
+
+        p.exists()
+    }
+
     /// Check if a service is enabled.
     pub fn enabled(&self) -> bool {
         // "/<svdir>/<service>/down"

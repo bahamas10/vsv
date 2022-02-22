@@ -35,6 +35,12 @@ fn _do_enable_disable(cfg: &Config) -> Result<()> {
         let svc = RunitService::new(name, &p);
         print!("{} service {}... ", cfg.mode, name);
 
+        if !svc.valid() {
+            println!("failed! service not valid");
+            had_error = true;
+            continue;
+        }
+
         let ret = match cfg.mode {
             config::ProgramMode::Enable => svc.enable(),
             config::ProgramMode::Disable => svc.disable(),
