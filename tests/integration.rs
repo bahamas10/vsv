@@ -95,7 +95,7 @@ fn parse_status_output(s: &str) -> Result<Vec<Vec<&str>>> {
         &["", "SERVICE", "STATE", "ENABLED", "PID", "COMMAND", "TIME"];
 
     for (i, good_item) in good_header.iter().enumerate() {
-        assert_eq!(&header[i].trim_end(), good_item);
+        assert_eq!(&header[i].trim_end(), good_item, "check header field");
     }
 
     Ok(lines)
@@ -106,34 +106,44 @@ fn create_service(
     name: &str,
     state: &str,
     pid: Option<&str>,
+    log_pid: Option<&str>,
 ) -> Result<()> {
     let svc_dir = cfg.service_path.join(name);
-    let supervise_dir = svc_dir.join("supervise");
-    let stat_file = supervise_dir.join("stat");
+    let dirs = [("cmd", &svc_dir, pid), ("log", &svc_dir.join("log"), log_pid)];
 
-    fs::create_dir(&svc_dir)?;
-    fs::create_dir(&supervise_dir)?;
-    fs::write(&stat_file, format!("{}\n", state))?;
+    for (s, dir, pid) in dirs {
+        let supervise_dir = dir.join("supervise");
+        let stat_file = supervise_dir.join("stat");
 
-    // write pid and proc info if supplied
-    if let Some(pid) = pid {
-        let proc_pid_dir = cfg.proc_path.join(pid);
-        let pid_file = supervise_dir.join("pid");
-        let cmd_file = proc_pid_dir.join("cmdline");
+        fs::create_dir(&dir)?;
+        fs::create_dir(&supervise_dir)?;
+        fs::write(&stat_file, format!("{}\n", state))?;
 
-        fs::create_dir(&proc_pid_dir)?;
-        fs::write(&pid_file, format!("{}\n", pid))?;
-        fs::write(&cmd_file, format!("{}-cmd\0", name))?;
+        // write pid and proc info if supplied
+        if let Some(pid) = pid {
+            let proc_pid_dir = cfg.proc_path.join(pid);
+            let pid_file = supervise_dir.join("pid");
+            let cmd_file = proc_pid_dir.join("cmdline");
+
+            fs::create_dir(&proc_pid_dir)?;
+            fs::write(&pid_file, format!("{}\n", pid))?;
+            fs::write(&cmd_file, format!("{}-{}\0", name, s))?;
+        }
     }
 
     Ok(())
 }
 
-fn remove_service(cfg: &Config, name: &str, pid: Option<&str>) -> Result<()> {
+fn remove_service(
+    cfg: &Config,
+    name: &str,
+    pid: Option<&str>,
+    log_pid: Option<&str>,
+) -> Result<()> {
     let svc_dir = cfg.service_path.join(name);
     fs::remove_dir_all(&svc_dir)?;
 
-    if let Some(pid) = pid {
+    for pid in [pid, log_pid].into_iter().flatten() {
         let proc_pid_dir = cfg.proc_path.join(pid);
         fs::remove_dir_all(&proc_pid_dir)?;
     }
@@ -199,6 +209,8 @@ fn full_synthetic_test() -> Result<()> {
 
     // create the vsv command to use for all tests
     let mut status_cmd = vsv(&cfg)?;
+    let mut status_cmd_l = vsv(&cfg)?;
+    status_cmd_l.arg("status").arg("-l");
 
     // start fresh by removing the service and proc paths
     let _ = fs::remove_dir_all(&tmp_path);
@@ -216,12 +228,12 @@ fn full_synthetic_test() -> Result<()> {
     run_command_compare_output(&mut status_cmd, want)?;
 
     // test service
-    create_service(&cfg, "foo", "run", Some("123"))?;
+    create_service(&cfg, "foo", "run", Some("123"), None)?;
     let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
     run_command_compare_output(&mut status_cmd, want)?;
 
     // test another service
-    create_service(&cfg, "bar", "run", Some("234"))?;
+    create_service(&cfg, "bar", "run", Some("234"), None)?;
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "foo", "run", "true", "123", "foo-cmd"],
@@ -229,7 +241,7 @@ fn full_synthetic_test() -> Result<()> {
     run_command_compare_output(&mut status_cmd, want)?;
 
     // test service no pid
-    create_service(&cfg, "baz", "run", None)?;
+    create_service(&cfg, "baz", "run", None, None)?;
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "baz", "run", "true", "---", "---"],
@@ -238,7 +250,13 @@ fn full_synthetic_test() -> Result<()> {
     run_command_compare_output(&mut status_cmd, want)?;
 
     // test service bad pid
-    create_service(&cfg, "bat", "run", Some("uh oh this one won't parse"))?;
+    create_service(
+        &cfg,
+        "bat",
+        "run",
+        Some("uh oh this one won't parse"),
+        None,
+    )?;
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "bat", "run", "true", "---", "---"],
@@ -248,14 +266,14 @@ fn full_synthetic_test() -> Result<()> {
     run_command_compare_output(&mut status_cmd, want)?;
 
     // remove services
-    remove_service(&cfg, "bar", Some("234"))?;
-    remove_service(&cfg, "bat", None)?;
-    remove_service(&cfg, "baz", None)?;
+    remove_service(&cfg, "bar", Some("234"), None)?;
+    remove_service(&cfg, "bat", None, None)?;
+    remove_service(&cfg, "baz", None, None)?;
     let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
     run_command_compare_output(&mut status_cmd, want)?;
 
     // add down service
-    create_service(&cfg, "bar", "down", None)?;
+    create_service(&cfg, "bar", "down", None, None)?;
     let want = &[
         &["X", "bar", "down", "true", "---", "---"],
         &["✔", "foo", "run", "true", "123", "foo-cmd"],
@@ -263,7 +281,7 @@ fn full_synthetic_test() -> Result<()> {
     run_command_compare_output(&mut status_cmd, want)?;
 
     // add unknown state service
-    create_service(&cfg, "bat", "something-bad", None)?;
+    create_service(&cfg, "bat", "something-bad", None, None)?;
     let want = &[
         &["X", "bar", "down", "true", "---", "---"],
         &["?", "bat", "n/a", "true", "---", "---"],
@@ -272,7 +290,13 @@ fn full_synthetic_test() -> Result<()> {
     run_command_compare_output(&mut status_cmd, want)?;
 
     // add long service name
-    create_service(&cfg, "some-really-long-service-name", "run", Some("1"))?;
+    create_service(
+        &cfg,
+        "some-really-long-service-name",
+        "run",
+        Some("1"),
+        None,
+    )?;
     let want = &[
         &["X", "bar", "down", "true", "---", "---"],
         &["?", "bat", "n/a", "true", "---", "---"],
@@ -282,16 +306,16 @@ fn full_synthetic_test() -> Result<()> {
     run_command_compare_output(&mut status_cmd, want)?;
 
     // remove services
-    remove_service(&cfg, "some-really-long-service-name", Some("1"))?;
-    remove_service(&cfg, "bar", None)?;
-    remove_service(&cfg, "bat", None)?;
+    remove_service(&cfg, "some-really-long-service-name", Some("1"), None)?;
+    remove_service(&cfg, "bar", None, None)?;
+    remove_service(&cfg, "bat", None, None)?;
     let want = &[&["✔", "foo", "run", "true", "123", "foo-cmd"]];
     run_command_compare_output(&mut status_cmd, want)?;
 
     // add some more services
-    create_service(&cfg, "bar", "run", Some("234"))?;
-    create_service(&cfg, "baz", "run", Some("345"))?;
-    create_service(&cfg, "bat", "run", Some("456"))?;
+    create_service(&cfg, "bar", "run", Some("234"), None)?;
+    create_service(&cfg, "baz", "run", Some("345"), None)?;
+    create_service(&cfg, "bat", "run", Some("456"), None)?;
 
     // test disable
     let mut cmd = vsv(&cfg)?;
@@ -337,6 +361,22 @@ fn full_synthetic_test() -> Result<()> {
         &["✔", "foo", "run", "true", "123", "foo-cmd"],
     ];
     run_command_compare_output(&mut status_cmd, want)?;
+
+    // remove all services
+    remove_service(&cfg, "foo", Some("123"), None)?;
+    remove_service(&cfg, "bar", Some("234"), None)?;
+    remove_service(&cfg, "baz", Some("345"), None)?;
+    remove_service(&cfg, "bat", Some("456"), None)?;
+    let want: &[&[&str; 6]] = &[];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // create a service with a logger function
+    create_service(&cfg, "foo", "run", Some("100"), Some("150"))?;
+    let want = &[
+        &["✔", "foo", "run", "true", "100", "foo-cmd"],
+        &["✔", "- log", "run", "true", "150", "foo-log"],
+    ];
+    run_command_compare_output(&mut status_cmd_l, want)?;
 
     Ok(())
 }
