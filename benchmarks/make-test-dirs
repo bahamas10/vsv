@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+servicedir='./service'
+procdir='./proc'
+
+mkdir -p "$servicedir"
+mkdir -p "$procdir"
+
+make-service() {
+	local name=$1
+	local state=$2
+	local pid=$3
+
+	local dir=$servicedir/$name
+
+	echo "creating $dir: (pid '$pid' state '$state')"
+
+	mkdir -p "$dir"
+	mkdir -p "$dir/supervise"
+	echo "$state" > "$dir/supervise/stat"
+	echo "$pid" > "$dir/supervise/pid"
+
+	local proc=$procdir/$pid
+	echo "creating $proc"
+	mkdir -p "$proc"
+	printf '%s-command\0arg1\0arg2\0' "$name" > "$proc/cmdline"
+}
+
+pid=1
+for i in {1..1000}; do
+	make-service "$i" 'run' "$pid"
+	((pid++))
+	make-service "$i/log" 'run' "$pid"
+	((pid++))
+done
+
+true
