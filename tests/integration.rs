@@ -7,7 +7,9 @@
  */
 
 use std::fs;
-use std::path::PathBuf;
+use std::fs::File;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::str;
 
 use anyhow::{anyhow, Result};
@@ -27,6 +29,13 @@ fn vsv(cfg: &Config) -> Result<Command> {
     cmd.env("PROC_DIR", &cfg.proc_path);
 
     Ok(cmd)
+}
+
+fn write_file(fname: &Path, contents: &str) -> Result<()> {
+    let mut f = File::create(fname)?;
+    write!(f, "{}", contents)?;
+
+    Ok(())
 }
 
 fn get_tmp_path() -> PathBuf {
@@ -377,6 +386,30 @@ fn full_synthetic_test() -> Result<()> {
         &["✔", "- log", "run", "true", "150", "foo-log"],
     ];
     run_command_compare_output(&mut status_cmd_l, want)?;
+
+    // disable logger only
+    let mut cmd = vsv(&cfg)?;
+    cmd.args(&["disable", "foo/log"]).assert().success();
+    let want = &[
+        &["✔", "foo", "run", "true", "100", "foo-cmd"],
+        &["✔", "- log", "run", "false", "150", "foo-log"],
+    ];
+    run_command_compare_output(&mut status_cmd_l, want)?;
+
+    // manually create a bad service (just a file)
+    let dir = cfg.service_path.join("not-a-dir");
+    write_file(&dir, "whatever")?;
+    let want = &[&["✔", "foo", "run", "true", "100", "foo-cmd"]];
+    run_command_compare_output(&mut status_cmd, want)?;
+
+    // manually create an unknown service (just a dir)
+    let dir = cfg.service_path.join("just-a-dir");
+    fs::create_dir(dir)?;
+    let want = &[
+        &["✔", "foo", "run", "true", "100", "foo-cmd"],
+        &["?", "just-a-dir", "n/a", "true", "---", "---"],
+    ];
+    run_command_compare_output(&mut status_cmd, want)?;
 
     Ok(())
 }
