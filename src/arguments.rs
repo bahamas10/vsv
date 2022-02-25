@@ -11,7 +11,15 @@ use std::path;
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
-#[clap(author, version, about, long_about = None)]
+#[clap(author, version, about, verbatim_doc_comment, long_about = None)]
+///  __   _______   __
+///  \ \ / / __\ \ / /   Void Service Manager
+///   \ V /\__ \\ V /    Source: https://github.com/bahamas10/vsv
+///    \_/ |___/ \_/     MIT License
+///    -------------
+///     Manage and view runit services
+///     Made specifically for Void Linux but should work anywhere
+///     Author: Dave Eddy <dave@daveeddy.com> (bahamas10)
 pub struct Args {
     /// Enable or disable color output
     #[clap(short, long, value_name = "yes|no|auto")]
