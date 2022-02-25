@@ -411,5 +411,18 @@ fn full_synthetic_test() -> Result<()> {
     ];
     run_command_compare_output(&mut status_cmd, want)?;
 
+    // create services and use a filter
+    create_service(&cfg, "test-1", "run", Some("1"), None)?;
+    create_service(&cfg, "test-2", "run", Some("2"), None)?;
+    create_service(&cfg, "test-3", "run", Some("3"), None)?;
+    let mut cmd = vsv(&cfg)?;
+    cmd.args(&["status", "test"]).assert().success();
+    let want = &[
+        &["✔", "test-1", "run", "true", "1", "test-1-cmd"],
+        &["✔", "test-2", "run", "true", "2", "test-2-cmd"],
+        &["✔", "test-3", "run", "true", "3", "test-3-cmd"],
+    ];
+    run_command_compare_output(&mut cmd, want)?;
+
     Ok(())
 }
