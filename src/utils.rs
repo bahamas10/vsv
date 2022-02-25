@@ -20,7 +20,7 @@ macro_rules! verbose {
     ($cfg:expr, $fmt:expr $(, $args:expr )* $(,)? ) => {
         if $cfg.verbose > 0 {
             let s = format!($fmt $(, $args)*);
-            eprintln!(">  {}", Style::default().dimmed().paint(s));
+            eprintln!(">  {}", ::yansi::Style::default().dimmed().paint(s));
         }
     };
 }

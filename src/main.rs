@@ -21,6 +21,7 @@ mod utils;
 
 use config::{Config, ProgramMode};
 use die::die;
+use utils::verbose;
 
 /// Main wrapped to return a result.
 fn do_main() -> Result<()> {
@@ -35,6 +36,14 @@ fn do_main() -> Result<()> {
     if cfg.colorize {
         Paint::enable();
     }
+
+    verbose!(
+        cfg,
+        "program_mode={} num_threads={} color_output={}",
+        cfg.mode,
+        rayon::current_num_threads(),
+        cfg.colorize
+    );
 
     // figure out subcommand to run
     match cfg.mode {

@@ -42,8 +42,8 @@ pub fn do_status(cfg: &Config) -> Result<()> {
     // print gathared data
     let bold_style = Style::default().bold();
 
-    println!();
     verbose!(cfg, "found {} services in {:?}", services.len(), cfg.svdir);
+    println!();
     println!(
         "{}",
         utils::format_status_line(
