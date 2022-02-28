@@ -5,6 +5,7 @@ description = "Runit service manager CLI"
 edition = "2021"
 repository = "https://github.com/bahamas10/rust-vsv"
 license = "MIT License"
+exclude = ["/assets"]
 
 [dependencies]
 anyhow = "1.0.55"
