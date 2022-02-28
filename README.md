@@ -9,8 +9,6 @@ in Bash.
 `vsv` was inspired by [`vpm`][vpm].  `vsv` is to `sv` as `vpm` is to the
 `xbps-*` commands.
 
-![vsv-status.jpg](assets/vsv-status.jpg)
-
 Installation
 ------------
 
@@ -22,7 +20,7 @@ Examples
 Run `vsv` without any arguments to get process status.  This is equivalent to
 running `vsv status`:
 
-![vsv-status.jpg](assets/vsv-status.jpg)
+<img alt="vsv-status" src="assets/vsv-status.jpg" width="500" />
 
 **Note:** `sudo` or escalated privileges are required to determine service state
 because of the strict permissions on each service's `supervise` directory.
