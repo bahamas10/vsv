@@ -1,0 +1,152 @@
+.TH VSV 8 "FEB 2022" "System Manager's Utilities"
+.SH NAME
+.PP
+\fB\fCvsv\fR \- manage and view runit services
+.SH SYNOPSIS
+.PP
+\fB\fCvsv [OPTIONS] [SUBCOMMAND] [<ARGS>]\fR
+.PP
+\fB\fCvsv [\-u] [\-d <dir>] [\-h] [\-t] [SUBCOMMAND] [...]\fR
+.SH DESCRIPTION
+.PP
+\fB\fCvsv\fR is a wrapper for the \fB\fCsv\fR command that can be used to query and manage
+services under runit. It was made specifically for Void Linux but should
+theoretically work on any system using runit to manage services.
+.SH OPTIONS
+.TP
+\fB\fC\-c <yes|no|auto>\fR
+Enable/disable color output, defaults to auto.
+.TP
+\fB\fC\-d\fR \fIdir\fP
+Directory to look into, defaults to env \fB\fCSVDIR\fR or \fB\fC/var/service\fR if unset.
+.TP
+\fB\fC\-h\fR
+Print this message and exit.
+.TP
+\fB\fC\-l\fR
+Show log processes, this is a shortcut for \fB\fCvsv status \-l\fR\&.
+.TP
+\fB\fC\-t\fR
+Tree view, this is a shortcut for \fB\fCvsv status \-t\fR\&.
+.TP
+\fB\fC\-u\fR
+User mode, this is a shortcut for \fB\fCvsv \-d ~/runit/service\fR\&.
+.TP
+\fB\fC\-v\fR
+Increase verbosity.
+.TP
+\fB\fC\-V\fR
+Print the version number and exit.
+.SH ENVIRONMENT
+.TP
+\fB\fCSVDIR\fR
+The directory to use, passed to the \fB\fCsv\fR command, can be overridden with \fB\fC\-d
+<dir>\fR\&.
+.TP
+\fB\fCPROC_DIR\fR
+A Linux procfs directory to use for command name lookups, defaults to \fB\fC/proc\fR\&.
+.TP
+\fB\fCSV_PROG\fR
+The command to use for any "external" subcommand given to \fB\fCvsv\fR, defaults to
+\fB\fCsv\fR\&.
+.TP
+\fB\fCPSTREE_PROG\fR
+The command to use to get a process tree for a given pid, defaults to
+\fB\fCpstree\fR\&.
+.TP
+\fB\fCNO_COLOR\fR
+Set this environmental variable to disable color output.
+.SH SUBCOMMANDS
+.PP
+\fB\fCstatus\fR
+.PP
+\fB\fCvsv status [\-lt] [filter]\fR
+.PP
+Default subcommand, show process status
+.TP
+\fB\fC\-t\fR
+Enables tree mode (process tree)
+.TP
+\fB\fC\-l\fR
+Enables log mode (show log processes)
+.TP
+\fB\fCfilter\fR
+An optional string to match service names against
+.PP
+Any other subcommand gets passed directly to the \fB\fCsv\fR command, see \fB\fCsv(1)\fR for
+the full list of subcommands and information about what each does specifically.
+Common subcommands:
+.PP
+\fB\fCstart <service>\fR
+.IP
+Start the service
+.PP
+\fB\fCstop <service>\fR
+.IP
+Stop the service
+.PP
+\fB\fCrestart <service>\fR
+.IP
+Restart the service
+.PP
+\fB\fCreload <service>\fR
+.IP
+Reload the service (send \fB\fCSIGHUP\fR)
+.PP
+\fB\fCenable <service>\fR
+.PP
+ Enable the service (remove the "down" file, does not start service)
+.PP
+\fB\fCdisable <service>\fR
+.PP
+ Disable the service (create the "down" file, does not stop service)
+.SH EXAMPLES
+.PP
+\fB\fCvsv\fR
+.IP
+Show service status in \fB\fC/var/service\fR
+.PP
+\fB\fCvsv status\fR
+.IP
+Same as above
+.PP
+\fB\fCvsv \-t\fR
+.IP
+Show service status + \fB\fCpstree\fR output
+.PP
+\fB\fCvsv status \-t\fR
+.IP
+Same as above
+.PP
+\fB\fCvsv status tty\fR
+.IP
+Show service status for any service that matches \fB\fCtty\fR
+.PP
+\fB\fCvsv check uuidd\fR
+.IP
+Check the uuidd svc, wrapper for \fB\fCsv check uuidd\fR
+.PP
+\fB\fCvsv restart sshd\fR
+.IP
+Restart sshd, wrapper for \fB\fCsv restart sshd\fR
+.PP
+\fB\fCvsv \-u\fR
+.IP
+Show service status in \fB\fC~/runit/service\fR
+.PP
+\fB\fCvsv \-u restart ssh\-agent\fR
+.IP
+Restart ssh\-agent in \fB\fC~/runit/service/ssh\-agent\fR
+.SH BUGS
+.PP
+\[la]https://github.com/bahamas10/rust-vsv\[ra]
+.SH AUTHOR
+.PP
+\fB\fCDave Eddy <bahamas10> <dave@daveeddy.com> (https://www.daveeddy.com)\fR
+.SH SEE ALSO
+.PP
+.BR sv (8), 
+.BR runsvdir (8)
+.SH LICENSE
+.PP
+MIT License
