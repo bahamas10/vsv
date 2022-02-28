@@ -20,7 +20,7 @@ Examples
 Run `vsv` without any arguments to get process status.  This is equivalent to
 running `vsv status`:
 
-<img alt="vsv-status" src="assets/vsv-status.jpg" width="700" />
+<img alt="vsv-status" src="assets/vsv-status.jpg" width="600" />
 
 **Note:** `sudo` or escalated privileges are required to determine service state
 because of the strict permissions on each service's `supervise` directory.
@@ -31,42 +31,42 @@ Any service that has been in a state for less than 5 seconds will be marked
 in red and any less than 30 seconds will be marked in yellow, making new or
 failing services easy to spot:
 
-<img alt="vsv-add-service.jpg" src="assets/vsv-add-service.jpg" width="700" />
+<img alt="vsv-add-service.jpg" src="assets/vsv-add-service.jpg" width="600" />
 
 We can isolate the service by passing it as a "filter" to `status`.
 
-<img alt="vsv-filter.jpg" src="assets/vsv-filter.jpg" width="700" />
+<img alt="vsv-filter.jpg" src="assets/vsv-filter.jpg" width="600" />
 
 A string can be passed as the first argument after `status` to filter for
 services that contain that string in their name.  Also, `-t` can be supplied to
 `status` to print the process tree of the pid for that process:
 
-<img alt="vsv-arguments.jpg" src="assets/vsv-arguments.jpg" width="700" />
+<img alt="vsv-arguments.jpg" src="assets/vsv-arguments.jpg" width="600" />
 
 Any command other than `status` will be passed directly to the `sv` command.
 Restarting a service is as easy as `vsv restart <svc>`:
 
-<img alt="vsv-restart.jpg" src="assets/vsv-restart.jpg" width="700" />
+<img alt="vsv-restart.jpg" src="assets/vsv-restart.jpg" width="600" />
 
 To stop a service, `vsv down <svc>` or `vsv stop <svc>` can be used:
 
-<img alt="vsv-down.jpg" src="assets/vsv-down.jpg" width="700" />
+<img alt="vsv-down.jpg" src="assets/vsv-down.jpg" width="600" />
 
 A full service tree can be generated with `vsv -t`.  This command is equivalent
 to running `vsv status -t`:
 
-<img alt="vsv-tree.jpg" src="assets/vsv-tree.jpg" width="700" />
+<img alt="vsv-tree.jpg" src="assets/vsv-tree.jpg" width="600" />
 
 `-l` can be specified to view log services for each service as well.  This
 command is equivalent to running `vsv status -l virt`:
 
-<img alt="vsv-log.jpg" src="assets/vsv-log.jpg" width="700" />
+<img alt="vsv-log.jpg" src="assets/vsv-log.jpg" width="600" />
 
 `-t` can be specified with `-l` to view log services as a tree for each service
 as well as normal services.  This command is equivalent to running `vsv status
 -tl virt`:
 
-<img alt="vsv-log-tree.jpg" src="assets/vsv-log-tree.jpg" width="700" />
+<img alt="vsv-log-tree.jpg" src="assets/vsv-log-tree.jpg" width="600" />
 
 Usage
 -----
