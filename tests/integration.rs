@@ -424,5 +424,18 @@ fn full_synthetic_test() -> Result<()> {
     ];
     run_command_compare_output(&mut cmd, want)?;
 
+    // status mode should work without "status" when -t or -l is supplied
+    let mut cmd = vsv(&cfg)?;
+    cmd.args(&["-l", "test"]).assert().success();
+    let want = &[
+        &["✔", "test-1", "run", "true", "1", "test-1-cmd"],
+        &["✔", "- log", "run", "true", "---", "---"],
+        &["✔", "test-2", "run", "true", "2", "test-2-cmd"],
+        &["✔", "- log", "run", "true", "---", "---"],
+        &["✔", "test-3", "run", "true", "3", "test-3-cmd"],
+        &["✔", "- log", "run", "true", "---", "---"],
+    ];
+    run_command_compare_output(&mut cmd, want)?;
+
     Ok(())
 }

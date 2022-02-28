@@ -50,7 +50,7 @@ impl fmt::Display for ProgramMode {
             ProgramMode::Status => "status",
             ProgramMode::Enable => "enable",
             ProgramMode::Disable => "disable",
-            ProgramMode::External => "(external)",
+            ProgramMode::External => "<external>",
         };
 
         s.fmt(f)
@@ -132,7 +132,13 @@ impl Config {
             }
             // `vsv <anything> ...`
             Some(Commands::External(args)) => {
-                (ProgramMode::External, args.to_vec())
+                // -t or -l will put the program into status mode
+                let mode = if tree || log {
+                    ProgramMode::Status
+                } else {
+                    ProgramMode::External
+                };
+                (mode, args.to_vec())
             }
         };
 
