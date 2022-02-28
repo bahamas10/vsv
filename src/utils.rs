@@ -31,28 +31,28 @@ pub(crate) use verbose;
 /// # Example
 /// ```
 /// use yansi::Style;
-/// let bold_style = Style::default().bold();
+/// let style = Style::default();
 /// println!(
 ///     "{}",
 ///     format_status_line(
-///         ("", &bold_style),
-///         ("SERVICE", &bold_style),
-///         ("STATE", &bold_style),
-///         ("ENABLED", &bold_style),
-///         ("PID", &bold_style),
-///         ("COMMAND", &bold_style),
-///         ("TIME", &bold_style),
+///         ("", style.bold()),
+///         ("SERVICE", style.bold()),
+///         ("STATE", style.bold()),
+///         ("ENABLED", style.bold()),
+///         ("PID", style.bold()),
+///         ("COMMAND", style.bold()),
+///         ("TIME", style.bold()),
 ///     )
 /// );
 /// ```
 pub fn format_status_line<T: AsRef<str>>(
-    status_char: (T, &Style),
-    name: (T, &Style),
-    state: (T, &Style),
-    enabled: (T, &Style),
-    pid: (T, &Style),
-    command: (T, &Style),
-    time: (T, &Style),
+    status_char: (T, Style),
+    name: (T, Style),
+    state: (T, Style),
+    enabled: (T, Style),
+    pid: (T, Style),
+    command: (T, Style),
+    time: (T, Style),
 ) -> String {
     // ( data + style to print, max width, suffix )
     let data = [

@@ -143,103 +143,111 @@ impl Service {
     }
 
     /// Format the service name as a string.
-    fn format_name(&self) -> String {
-        self.name.to_string()
+    fn format_name(&self) -> (String, Style) {
+        (self.name.to_string(), Style::default())
     }
 
     /// Format the service char as a string.
-    fn format_status_char(&self) -> String {
-        self.state.get_char()
+    fn format_status_char(&self) -> (String, Style) {
+        (self.state.get_char(), self.state.get_style())
     }
 
     /// Format the service state as a string.
-    fn format_state(&self) -> String {
-        self.state.to_string()
+    fn format_state(&self) -> (String, Style) {
+        (self.state.to_string(), self.state.get_style())
     }
 
     /// Format the service enabled status as a string.
-    fn format_enabled(&self) -> String {
-        self.enabled.to_string()
+    fn format_enabled(&self) -> (String, Style) {
+        let style = match self.enabled {
+            true => Style::default().fg(Color::Green),
+            false => Style::default().fg(Color::Red),
+        };
+
+        let s = self.enabled.to_string();
+
+        (s, style)
     }
 
     /// Format the service pid as a string.
-    fn format_pid(&self) -> String {
-        match self.pid {
+    fn format_pid(&self) -> (String, Style) {
+        let style = Style::default().fg(Color::Magenta);
+
+        let s = match self.pid {
             Some(pid) => pid.to_string(),
             None => String::from("---"),
-        }
+        };
+
+        (s, style)
     }
 
     /// Format the service command a string.
-    fn format_command(&self) -> String {
-        match &self.command {
+    fn format_command(&self) -> (String, Style) {
+        let style = Style::default().fg(Color::Green);
+
+        let s = match &self.command {
             Some(cmd) => cmd.clone(),
             None => String::from("---"),
-        }
+        };
+
+        (s, style)
     }
 
     /// Format the service time as a string.
-    fn format_time(&self) -> String {
-        match &self.start_time {
-            Ok(time) => match time.elapsed() {
-                Ok(t) => utils::relative_duration(&t),
-                Err(err) => err.to_string(),
-            },
-            Err(err) => err.to_string(),
-        }
+    fn format_time(&self) -> (String, Style) {
+        let style = Style::default();
+
+        let time = match &self.start_time {
+            Ok(time) => time,
+            Err(err) => return (err.to_string(), style.fg(Color::Red)),
+        };
+
+        let t = match time.elapsed() {
+            Ok(t) => t,
+            Err(err) => return (err.to_string(), style.fg(Color::Red)),
+        };
+
+        let s = utils::relative_duration(&t);
+        let style = match t.as_secs() {
+            t if t < 5 => style.fg(Color::Red),
+            t if t < 30 => style.fg(Color::Yellow),
+            _ => style.dimmed(),
+        };
+
+        (s, style)
     }
 
     /// Format the service `pstree` output as a string.
-    pub fn format_pstree(&self) -> String {
-        match &self.pstree {
-            Some(tree) => {
-                let tree_s = match tree {
-                    Ok(stdout) => Style::default()
-                        .dimmed()
-                        .paint(stdout.trim().to_string()),
-                    Err(err) => {
-                        Color::Red.paint(format!("pstree call failed: {}", err))
-                    }
-                };
-                format!("\n{}\n", tree_s)
+    pub fn format_pstree(&self) -> (String, Style) {
+        let style = Style::default();
+
+        let tree = match &self.pstree {
+            Some(tree) => tree,
+            None => return ("".into(), style),
+        };
+
+        let (tree_s, style) = match tree {
+            Ok(stdout) => (stdout.trim().into(), style.dimmed()),
+            Err(err) => {
+                (format!("pstree call failed: {}", err), style.fg(Color::Red))
             }
-            None => "".into(),
-        }
+        };
+
+        (format!("\n{}\n", tree_s), style)
     }
 }
 
 impl fmt::Display for Service {
     /// Format the service as a string suitable for output by `vsv`.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let state_style = self.state.get_style();
-
-        let status_char = (self.format_status_char(), &state_style);
-
-        let name = (self.format_name(), &Style::default());
-
-        let state = (self.format_state(), &state_style);
-
-        let enabled = match self.enabled {
-            true => Style::default().fg(Color::Green),
-            false => Style::default().fg(Color::Red),
-        };
-        let enabled = (self.format_enabled(), &enabled);
-
-        let pid = (self.format_pid(), &Style::default().fg(Color::Magenta));
-
-        let command =
-            (self.format_command(), &Style::default().fg(Color::Green));
-
-        let time = (self.format_time(), &Style::default().dimmed());
-
         let base = utils::format_status_line(
-            status_char,
-            name,
-            state,
-            enabled,
-            pid,
-            command,
-            time,
+            self.format_status_char(),
+            self.format_name(),
+            self.format_state(),
+            self.format_enabled(),
+            self.format_pid(),
+            self.format_command(),
+            self.format_time(),
         );
 
         base.fmt(f)
