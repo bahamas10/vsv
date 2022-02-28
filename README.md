@@ -98,6 +98,15 @@ The `status` subcommand has the following fields:
 Command Usage:
 
     $ vsv -h
+     __   _______   __
+     \ \ / / __\ \ / /   Void Service Manager
+      \ V /\__ \\ V /    Source: https://github.com/bahamas10/vsv
+       \_/ |___/ \_/     MIT License
+       -------------
+        Manage and view runit services
+        Made specifically for Void Linux but should work anywhere
+        Author: Dave Eddy <dave@daveeddy.com> (bahamas10)
+
     vsv 2.0.0
     Runit service manager CLI
 

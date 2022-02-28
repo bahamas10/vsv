@@ -12,14 +12,14 @@ use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about, verbatim_doc_comment, long_about = None)]
-///  __   _______   __
-///  \ \ / / __\ \ / /   Void Service Manager
-///   \ V /\__ \\ V /    Source: https://github.com/bahamas10/vsv
-///    \_/ |___/ \_/     MIT License
-///    -------------
-///     Manage and view runit services
-///     Made specifically for Void Linux but should work anywhere
-///     Author: Dave Eddy <dave@daveeddy.com> (bahamas10)
+#[clap(before_help = r" __   _______   __
+ \ \ / / __\ \ / /   Void Service Manager
+  \ V /\__ \\ V /    Source: https://github.com/bahamas10/vsv
+   \_/ |___/ \_/     MIT License
+   -------------
+    Manage and view runit services
+    Made specifically for Void Linux but should work anywhere
+    Author: Dave Eddy <dave@daveeddy.com> (bahamas10)")]
 #[clap(
     after_help = "Any other subcommand gets passed directly to the 'sv' command, see sv(1) for
 the full list of subcommands and information about what each does specifically.
