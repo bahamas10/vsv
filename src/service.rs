@@ -66,10 +66,12 @@ impl fmt::Display for ServiceState {
     }
 }
 
-/// A struct suitable for describing an abstract service.
-///
-/// This struct itself doesn't do much - it just stores information about a
-/// service and knows how to format it to look pretty.
+/**
+ * A struct suitable for describing an abstract service.
+ *
+ * This struct itself doesn't do much - it just stores information about a
+ * service and knows how to format it to look pretty.
+ */
 pub struct Service {
     name: String,
     state: ServiceState,

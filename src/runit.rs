@@ -13,7 +13,7 @@ use std::io;
 use std::path;
 use std::time;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 
 /// Possible states for a runit service.
 pub enum RunitServiceState {
@@ -23,10 +23,12 @@ pub enum RunitServiceState {
     Unknown,
 }
 
-/// A runit service.
-///
-/// This struct defines an object that can represent an individual service for
-/// Runit.
+/**
+ * A runit service.
+ *
+ * This struct defines an object that can represent an individual service for
+ * Runit.
+ */
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RunitService {
     pub path: PathBuf,
@@ -117,14 +119,16 @@ impl RunitService {
     }
 }
 
-/// List the services in a given runit service directory.
-///
-/// This function optionally allows you to specify the `log` boolean.  If set,
-/// this will return the correponding log service for each base-level service
-/// found.
-///
-/// You may also specify an optional filter to only allow services that contain
-/// a given string.
+/**
+ * List the services in a given runit service directory.
+ *
+ * This function optionally allows you to specify the `log` boolean.  If set,
+ * this will return the correponding log service for each base-level service
+ * found.
+ *
+ * You may also specify an optional filter to only allow services that contain a
+ * given string.
+ */
 pub fn get_services<T>(
     path: &Path,
     log: bool,
@@ -136,7 +140,9 @@ where
     // loop services directory and collect service names
     let mut dirs = Vec::new();
 
-    for entry in fs::read_dir(path)? {
+    for entry in fs::read_dir(path)
+        .with_context(|| format!("failed to read dir {:?}", path))?
+    {
         let entry = entry?;
         let p = entry.path();
 

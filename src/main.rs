@@ -4,11 +4,13 @@
  * License: MIT
  */
 
-//! A rust port of `vsv`
-//!
-//! Original: <https://github.com/bahamas10/vsv>
+/*!
+ * A rust port of `vsv`
+ *
+ * Original: <https://github.com/bahamas10/vsv>
+ */
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use yansi::{Color, Paint};
 
 mod arguments;
@@ -23,14 +25,14 @@ use config::{Config, ProgramMode};
 use die::die;
 use utils::verbose;
 
-/// Main wrapped to return a result.
 fn do_main() -> Result<()> {
     // disable color until we absolutely know we want it
     Paint::disable();
 
     // parse CLI options + env vars
     let args = arguments::parse();
-    let cfg = Config::from_args(&args)?;
+    let cfg =
+        Config::from_args(&args).context("failed to parse args into config")?;
 
     // toggle color if the user wants it or the env dictates
     if cfg.colorize {

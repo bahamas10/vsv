@@ -8,7 +8,7 @@
 
 use std::env;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use clap::crate_name;
 use yansi::Color;
 
@@ -22,11 +22,7 @@ pub fn do_external(cfg: &Config) -> Result<()> {
     let sv = cfg.sv_prog.to_owned();
 
     if cfg.operands.len() < 2 {
-        return Err(anyhow!(
-            "argument expected for '{} {}'",
-            sv,
-            cfg.operands[0]
-        ));
+        bail!("argument expected for '{} {}'", sv, cfg.operands[0]);
     }
 
     // format arguments
