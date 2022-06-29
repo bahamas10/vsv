@@ -6,7 +6,7 @@ edition = "2021"
 repository = "https://github.com/bahamas10/rust-vsv"
 license = "MIT License"
 exclude = ["/assets"]
-keywords = ["runit", "void", "void linux"]
+keywords = ["runit", "void", "void-linux"]
 categories = ["command-line-utilities"]
 
 [dependencies]
