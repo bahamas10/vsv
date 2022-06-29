@@ -6,7 +6,7 @@
 
 //! `vsv enable` and `vsv disable`.
 
-use anyhow::{bail, Result};
+use anyhow::{ensure, Result};
 use yansi::{Color, Style};
 
 use crate::config;
@@ -25,9 +25,7 @@ pub fn do_disable(cfg: &Config) -> Result<()> {
 
 /// Handle `vsv enable` and `vsv disable`.
 fn _do_enable_disable(cfg: &Config) -> Result<()> {
-    if cfg.operands.is_empty() {
-        bail!("at least one (1) service required");
-    }
+    ensure!(!cfg.operands.is_empty(), "at least one (1) service required");
 
     let mut had_error = false;
 
@@ -61,9 +59,7 @@ fn _do_enable_disable(cfg: &Config) -> Result<()> {
         };
     }
 
-    if had_error {
-        bail!("failed to modify service(s).");
-    }
+    ensure!(!had_error, "failed to modify service(s)");
 
     Ok(())
 }

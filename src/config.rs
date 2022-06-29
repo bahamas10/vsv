@@ -17,7 +17,7 @@ use std::ffi::OsString;
 use std::fmt;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 
 use crate::arguments::{Args, Commands};
 use crate::config;
@@ -180,7 +180,7 @@ fn should_colorize_output(color_arg: &Option<String>) -> Result<bool> {
             "yes" | "on" | "always" => return Ok(true),
             "no" | "off" | "never" => return Ok(false),
             "auto" => (), // fall through
-            _ => return Err(anyhow!("unknown color option: '{}'", s)),
+            _ => bail!("unknown color option: '{}'", s),
         }
     }
 

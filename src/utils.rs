@@ -71,9 +71,7 @@ pub fn format_status_line<T: AsRef<str>>(
 
     let mut line = String::new();
 
-    for (o, max, suffix) in data {
-        let (text, style) = o;
-
+    for ((text, style), max, suffix) in data {
         let column = if max == 0 {
             format!(" {}", style.paint(text.as_ref()))
         } else {
