@@ -12,7 +12,15 @@ in Bash.
 Installation
 ------------
 
-(todo)
+### Using `crates`
+
+    cargo install vsv
+
+### Compile yourself
+
+    git clone git@github.com:bahamas10/rust-vsv.git
+    cd rust-vsv
+    cargo build
 
 Examples
 --------
