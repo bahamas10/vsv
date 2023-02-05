@@ -17,7 +17,7 @@ use std::ffi::OsString;
 use std::fmt;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Context, Result};
 
 use crate::arguments::{Args, Commands};
 use crate::config;
@@ -213,9 +213,8 @@ fn get_svdir(dir_arg: &Option<PathBuf>, user_arg: bool) -> Result<PathBuf> {
 
     // `-u`
     if user_arg {
-        let home_dir = dirs::home_dir().ok_or_else(|| {
-            anyhow!("failed to determine users home directory")
-        })?;
+        let home_dir = dirs::home_dir()
+            .context("failed to determine users home directory")?;
         let buf = home_dir.join(DEFAULT_USER_DIR);
         return Ok(buf);
     }

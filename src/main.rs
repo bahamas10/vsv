@@ -10,6 +10,8 @@
  * Original: <https://github.com/bahamas10/vsv>
  */
 
+#![allow(clippy::uninlined_format_args)]
+
 use anyhow::{Context, Result};
 use yansi::{Color, Paint};
 
