@@ -179,4 +179,4 @@ License
 MIT License
 
 [vpm]: https://github.com/netzverweigerer/vpm
-[vsv]: https://github.com/bahamas10/vsv
+[vsv]: https://github.com/bahamas10/bash-vsv
