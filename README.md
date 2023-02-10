@@ -12,6 +12,10 @@ in Bash.
 Installation
 ------------
 
+### On Void
+
+    xbps-install -S vsv
+
 ### Using `crates`
 
     cargo install vsv
