@@ -22,8 +22,8 @@ Installation
 
 ### Compile yourself
 
-    git clone git@github.com:bahamas10/rust-vsv.git
-    cd rust-vsv
+    git clone git@github.com:bahamas10/vsv.git
+    cd vsv
     cargo build
 
 Examples
