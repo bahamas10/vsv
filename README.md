@@ -182,5 +182,5 @@ License
 
 MIT License
 
-[vpm]: https://github.com/netzverweigerer/vpm
+[vpm]: https://github.com/CrusoeDaWolf/vpm
 [vsv]: https://github.com/bahamas10/bash-vsv
