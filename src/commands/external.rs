@@ -41,9 +41,9 @@ pub fn do_external(cfg: &Config) -> Result<()> {
             "Running {} command ({}={:?} {} {})",
             sv,
             config::ENV_SVDIR,
-            &cfg.svdir,
+            cfg.svdir,
             sv,
-            &args_s
+            args_s
         )
         .cyan()
     );
@@ -63,7 +63,7 @@ pub fn do_external(cfg: &Config) -> Result<()> {
     println!(
         "[{}] {}",
         crate_name!(),
-        format!("[{} {}] exit code {}", sv, &args_s, code).paint(color)
+        format!("[{} {}] exit code {}", sv, args_s, code).paint(color)
     );
 
     match code {

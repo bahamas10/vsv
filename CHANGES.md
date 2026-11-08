@@ -4,7 +4,7 @@ vsv Changes
 Not Yet Released
 ----------------
 
-(nothing yet)
+- [#2](https://github.com/bahamas10/vsv/pull/2) update dependencies - remove unsafe code
 
 `v2.0.0`
 --------
