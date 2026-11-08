@@ -1,0 +1,37 @@
+name: Void Linux
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Void Linux (${{ matrix.libc }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        libc: [glibc, musl]
+    steps:
+      - uses: actions/checkout@v4
+      # Run Docker explicitly so JavaScript actions execute on Ubuntu, including
+      # for the musl image where GitHub's bundled Node.js cannot run natively.
+      - name: Check and test on Void Linux
+        env:
+          VOID_IMAGE: ghcr.io/void-linux/void-${{ matrix.libc }}:latest
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            -e CARGO_TARGET_DIR=/tmp/vsv-target \
+            "$VOID_IMAGE" sh -euxc '
+              xbps-install -Syu xbps
+              xbps-install -Syu
+              xbps-install -y base-devel rust cargo ca-certificates
+              make check test
+            '
