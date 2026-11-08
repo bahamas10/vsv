@@ -8,15 +8,26 @@
 
 use std::path;
 
-use clap::{ArgAction, Parser, Subcommand};
+use clap::{
+    builder::styling::{AnsiColor, Styles},
+    ArgAction, Parser, Subcommand,
+};
+
+fn help_styles() -> Styles {
+    Styles::styled()
+        .header(AnsiColor::Yellow.on_default())
+        .usage(AnsiColor::Yellow.on_default())
+        .literal(AnsiColor::Green.on_default())
+        .placeholder(AnsiColor::Green.on_default())
+}
 
 #[derive(Debug, Parser)]
-#[clap(author, version, about, verbatim_doc_comment, long_about = None)]
-#[clap(before_help = r" __   _______   __
- \ \ / / __\ \ / /   Void Service Manager
-  \ V /\__ \\ V /    Source: https://github.com/bahamas10/vsv
-   \_/ |___/ \_/     MIT License
-   -------------
+#[clap(author, version, about, verbatim_doc_comment, long_about = None, styles = help_styles())]
+#[clap(before_help = "\x1b[35m __   _______   __\x1b[0m
+\x1b[35m \\ \\ / / __\\ \\ / /   \x1b[32mVoid Service Manager\x1b[0m
+\x1b[35m  \\ V /\\__ \\\\ V /    \x1b[32mSource: https://github.com/bahamas10/vsv\x1b[0m
+\x1b[35m   \\_/ |___/ \\_/     \x1b[32mMIT License\x1b[0m
+\x1b[35m   -------------\x1b[0m
     Manage and view runit services
     Made specifically for Void Linux but should work anywhere
     Author: Dave Eddy <dave@daveeddy.com> (bahamas10)")]
