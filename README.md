@@ -3,12 +3,6 @@
 
 Manage and view runit services.
 
-**Note:** This is a rewrite in Rust of [`vsv`][vsv] which was originally written
-in Bash.
-
-`vsv` was inspired by [`vpm`][vpm].  `vsv` is to `sv` as `vpm` is to the
-`xbps-*` commands.
-
 Installation
 ------------
 
@@ -161,21 +155,25 @@ Environmental Variables:
   defaults to `pstree`.
 - `NO_COLOR`: Set this environmental variable to disable color output.
 
-Syntax
-------
+Development
+-----------
 
 All source code should be clean of `cargo clippy` and `cargo fmt`.  You can use
 `make` to ensure this:
 
 ```
-$ make check
-cargo check
-    Finished dev [unoptimized + debuginfo] target(s) in 0.01s
-cargo clippy
-    Finished dev [unoptimized + debuginfo] target(s) in 0.12s
-$ make fmt
-cargo fmt
+$ make check test
+...
 ```
+
+Notes
+-----
+
+**Note:** This is a rewrite in Rust of [`vsv`][vsv] which was originally written
+in Bash.
+
+`vsv` was inspired by [`vpm`][vpm].  `vsv` is to `sv` as `vpm` is to the
+`xbps-*` commands.
 
 License
 -------
