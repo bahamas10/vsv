@@ -8,7 +8,7 @@
 
 use std::path;
 
-use clap::{Parser, Subcommand};
+use clap::{ArgAction, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about, verbatim_doc_comment, long_about = None)]
@@ -37,7 +37,7 @@ pub struct Args {
     pub color: Option<String>,
 
     /// Directory to look into, defaults to env SVDIR or /var/service if unset.
-    #[clap(short, long, parse(from_os_str), value_name = "dir")]
+    #[clap(short, long, value_parser, value_name = "dir")]
     pub dir: Option<path::PathBuf>,
 
     /// Show log processes, this is a shortcut for `status -l`.
@@ -53,8 +53,8 @@ pub struct Args {
     pub user: bool,
 
     /// Increase Verbosity.
-    #[clap(short, long, parse(from_occurrences))]
-    pub verbose: usize,
+    #[clap(short, long, action = ArgAction::Count)]
+    pub verbose: u8,
 
     /// Subcommand.
     #[clap(subcommand)]

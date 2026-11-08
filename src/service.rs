@@ -213,7 +213,7 @@ impl Service {
         let style = match t.as_secs() {
             t if t < 5 => style.fg(Color::Red),
             t if t < 30 => style.fg(Color::Yellow),
-            _ => style.dimmed(),
+            _ => style.dim(),
         };
 
         (s, style)
@@ -229,7 +229,7 @@ impl Service {
         };
 
         let (tree_s, style) = match tree {
-            Ok(stdout) => (stdout.trim().into(), style.dimmed()),
+            Ok(stdout) => (stdout.trim().into(), style.dim()),
             Err(err) => {
                 (format!("pstree call failed: {}", err), style.fg(Color::Red))
             }

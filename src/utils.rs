@@ -6,14 +6,14 @@
 
 //! Contains various util functions for vsv.
 
-use libc::{c_int, pid_t};
+use libc::pid_t;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, ExitStatus};
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
-use yansi::Style;
+use yansi::{Paint, Style};
 
 /**
  * A `println!()`-like macro that will only print if `-v` is set.
@@ -22,7 +22,7 @@ macro_rules! verbose {
     ($cfg:expr, $fmt:expr $(, $args:expr )* $(,)? ) => {
         if $cfg.verbose > 0 {
             let s = format!($fmt $(, $args)*);
-            eprintln!(">  {}", ::yansi::Style::default().dimmed().paint(s));
+            eprintln!(">  {}", s.dim());
         }
     };
 }
@@ -73,10 +73,10 @@ pub fn format_status_line<T: AsRef<str>>(
 
     for ((text, style), max, suffix) in data {
         let column = if max == 0 {
-            format!(" {}", style.paint(text.as_ref()))
+            format!(" {}", text.as_ref().paint(style))
         } else {
             let text = trim_long_string(text.as_ref(), max, suffix);
-            format!(" {0:1$}", style.paint(text), max)
+            format!(" {0:1$}", text.paint(style), max)
         };
 
         line.push_str(&column);
@@ -279,23 +279,6 @@ pub fn trim_long_string(s: &str, limit: usize, suffix: &str) -> String {
     )
 }
 
-/**
- * Check if the given file descriptor (by number) is a tty.
- *
- * # Example
- *
- * Print "hello world" if stdout is a tty:
- *
- * ```
- * if isatty(1) {
- *     println!("hello world");
- * }
- * ```
- */
-pub fn isatty(fd: c_int) -> bool {
-    unsafe { libc::isatty(fd) != 0 }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -367,13 +350,6 @@ mod tests {
         assert!(c.is_err(), "program generates an error");
 
         Ok(())
-    }
-
-    #[test]
-    fn test_isatty_bad_fd() {
-        let b = isatty(-1);
-
-        assert!(!b, "fd -1 is not a tty");
     }
 
     #[test]

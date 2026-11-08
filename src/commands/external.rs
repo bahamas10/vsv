@@ -10,7 +10,7 @@ use std::env;
 
 use anyhow::{bail, ensure, Context, Result};
 use clap::crate_name;
-use yansi::Color;
+use yansi::{Color, Paint};
 
 use crate::utils;
 use crate::{config, config::Config};
@@ -37,14 +37,15 @@ pub fn do_external(cfg: &Config) -> Result<()> {
     println!(
         "[{}] {}",
         crate_name!(),
-        Color::Cyan.paint(format!(
+        format!(
             "Running {} command ({}={:?} {} {})",
             sv,
             config::ENV_SVDIR,
             &cfg.svdir,
             sv,
             &args_s
-        ))
+        )
+        .cyan()
     );
 
     // run the actual program
@@ -62,7 +63,7 @@ pub fn do_external(cfg: &Config) -> Result<()> {
     println!(
         "[{}] {}",
         crate_name!(),
-        color.paint(format!("[{} {}] exit code {}", sv, &args_s, code))
+        format!("[{} {}] exit code {}", sv, &args_s, code).paint(color)
     );
 
     match code {

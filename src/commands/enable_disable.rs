@@ -7,7 +7,7 @@
 //! `vsv enable` and `vsv disable`.
 
 use anyhow::{ensure, Result};
-use yansi::{Color, Style};
+use yansi::Paint;
 
 use crate::config;
 use crate::config::Config;
@@ -32,14 +32,10 @@ fn _do_enable_disable(cfg: &Config) -> Result<()> {
     for name in &cfg.operands {
         let p = cfg.svdir.join(name);
         let svc = RunitService::new(name, &p);
-        print!(
-            "{} service {}... ",
-            cfg.mode,
-            Style::default().bold().paint(name)
-        );
+        print!("{} service {}... ", cfg.mode, name.bold(),);
 
         if !svc.valid() {
-            println!("{}", Color::Red.paint("failed! service not valid"));
+            println!("{}", "failed! service not valid".red());
             had_error = true;
             continue;
         }
@@ -53,9 +49,9 @@ fn _do_enable_disable(cfg: &Config) -> Result<()> {
         match ret {
             Err(err) => {
                 had_error = true;
-                println!("{}", Color::Red.paint(format!("failed! {}", err)));
+                println!("{}", format!("failed! {}", err).red());
             }
-            Ok(()) => println!("{}.", Color::Green.paint("done")),
+            Ok(()) => println!("{}.", "done".green()),
         };
     }
 
