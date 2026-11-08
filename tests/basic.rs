@@ -25,7 +25,7 @@ fn external_success() -> Result<()> {
 
     cmd.env("SV_PROG", "true");
 
-    let assert = cmd.args(&["external", "cmd"]).assert();
+    let assert = cmd.args(["external", "cmd"]).assert();
 
     assert.success();
 
@@ -38,7 +38,7 @@ fn external_failure() -> Result<()> {
 
     cmd.env("SV_PROG", "false");
 
-    let assert = cmd.args(&["external", "cmd"]).assert();
+    let assert = cmd.args(["external", "cmd"]).assert();
 
     assert.failure();
 

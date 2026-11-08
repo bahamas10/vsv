@@ -124,7 +124,7 @@ fn create_service(
         let supervise_dir = dir.join("supervise");
         let stat_file = supervise_dir.join("stat");
 
-        fs::create_dir(&dir)?;
+        fs::create_dir(dir)?;
         fs::create_dir(&supervise_dir)?;
         fs::write(&stat_file, format!("{}\n", state))?;
 
@@ -328,7 +328,7 @@ fn full_synthetic_test() -> Result<()> {
 
     // test disable
     let mut cmd = vsv(&cfg)?;
-    cmd.args(&["disable", "bar", "baz"]).assert().success();
+    cmd.args(["disable", "bar", "baz"]).assert().success();
 
     let want = &[
         &["✔", "bar", "run", "false", "234", "bar-cmd"],
@@ -340,7 +340,7 @@ fn full_synthetic_test() -> Result<()> {
 
     // test enable
     let mut cmd = vsv(&cfg)?;
-    cmd.args(&["enable", "foo", "bar"]).assert().success();
+    cmd.args(["enable", "foo", "bar"]).assert().success();
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "bat", "run", "true", "456", "bat-cmd"],
@@ -351,7 +351,7 @@ fn full_synthetic_test() -> Result<()> {
 
     // test bad disable
     let mut cmd = vsv(&cfg)?;
-    cmd.args(&["disable", "fake-service", "foo"]).assert().failure();
+    cmd.args(["disable", "fake-service", "foo"]).assert().failure();
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "bat", "run", "true", "456", "bat-cmd"],
@@ -362,7 +362,7 @@ fn full_synthetic_test() -> Result<()> {
 
     // test bad enable
     let mut cmd = vsv(&cfg)?;
-    cmd.args(&["enable", "fake-service", "foo"]).assert().failure();
+    cmd.args(["enable", "fake-service", "foo"]).assert().failure();
     let want = &[
         &["✔", "bar", "run", "true", "234", "bar-cmd"],
         &["✔", "bat", "run", "true", "456", "bat-cmd"],
@@ -389,7 +389,7 @@ fn full_synthetic_test() -> Result<()> {
 
     // disable logger only
     let mut cmd = vsv(&cfg)?;
-    cmd.args(&["disable", "foo/log"]).assert().success();
+    cmd.args(["disable", "foo/log"]).assert().success();
     let want = &[
         &["✔", "foo", "run", "true", "100", "foo-cmd"],
         &["✔", "- log", "run", "false", "150", "foo-log"],
@@ -416,7 +416,7 @@ fn full_synthetic_test() -> Result<()> {
     create_service(&cfg, "test-2", "run", Some("2"), None)?;
     create_service(&cfg, "test-3", "run", Some("3"), None)?;
     let mut cmd = vsv(&cfg)?;
-    cmd.args(&["status", "test"]).assert().success();
+    cmd.args(["status", "test"]).assert().success();
     let want = &[
         &["✔", "test-1", "run", "true", "1", "test-1-cmd"],
         &["✔", "test-2", "run", "true", "2", "test-2-cmd"],
@@ -426,7 +426,7 @@ fn full_synthetic_test() -> Result<()> {
 
     // status mode should work without "status" when -t or -l is supplied
     let mut cmd = vsv(&cfg)?;
-    cmd.args(&["-l", "test"]).assert().success();
+    cmd.args(["-l", "test"]).assert().success();
     let want = &[
         &["✔", "test-1", "run", "true", "1", "test-1-cmd"],
         &["✔", "- log", "run", "true", "---", "---"],

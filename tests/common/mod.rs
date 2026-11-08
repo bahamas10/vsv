@@ -8,7 +8,7 @@ use anyhow::Result;
 use assert_cmd::Command;
 
 pub fn vsv() -> Result<Command> {
-    let mut cmd = Command::cargo_bin("vsv")?;
+    let mut cmd = assert_cmd::cargo::cargo_bin_cmd!("vsv");
 
     cmd.env_clear();
 

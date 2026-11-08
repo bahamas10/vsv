@@ -13,8 +13,9 @@ clean:
 
 .PHONY: check
 check:
-	cargo check
-	cargo clippy
+	cargo fmt --check
+	cargo check --all-targets --all-features
+	cargo clippy --all-targets --all-features -- -D warnings
 
 .PHONY: fmt
 fmt:
@@ -22,7 +23,7 @@ fmt:
 
 .PHONY: test
 test:
-	cargo test
+	cargo test --all-targets --all-features
 
 .PHONY: test-basic
 test-basic:
