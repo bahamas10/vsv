@@ -20,6 +20,17 @@ fn usage() -> Result<()> {
 }
 
 #[test]
+fn status_rejects_extra_filters() -> Result<()> {
+    let mut cmd = common::vsv()?;
+
+    let assert = cmd.args(["status", "foo", "bar"]).assert();
+
+    assert.failure();
+
+    Ok(())
+}
+
+#[test]
 fn external_success() -> Result<()> {
     let mut cmd = common::vsv()?;
 

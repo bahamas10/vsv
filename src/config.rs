@@ -124,9 +124,10 @@ impl Config {
                 (ProgramMode::Status, v)
             }
             // `vsv status`
-            Some(Commands::Status { tree: _, log: _, filter: operands }) => {
-                (ProgramMode::Status, operands.to_vec())
-            }
+            Some(Commands::Status { tree: _, log: _, filter: args }) => (
+                ProgramMode::Status,
+                args.clone().into_iter().to_owned().collect::<Vec<_>>(),
+            ),
             // `vsv enable ...`
             Some(Commands::Enable { services }) => {
                 (ProgramMode::Enable, services.to_vec())

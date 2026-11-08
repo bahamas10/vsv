@@ -84,7 +84,8 @@ pub enum Commands {
         #[clap(short, long)]
         tree: bool,
 
-        filter: Vec<String>,
+        /// Optional filter for service names
+        filter: Option<String>,
     },
 
     /// Enable service(s).
